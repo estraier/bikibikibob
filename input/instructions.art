@@ -35,10 +35,12 @@ input_dir: /home/www/mywiki-input
 output_dir: /home/www/public/mywiki
 script_file: bbb.js
 style_file: bbb.css
-title: My Wiki
-subtitle: my lovely Wiki site
-author: Bob Doe
+title: The Old Man and the Sea
+subtitle: story of a long struggle to catch a giant marlin
 language: en
+extra_meta: author|Ernest Hemingway
+extra_meta: keywords|novel, fishing, marlin, santiago
+extra_meta: robots|all
 ||<
 
 * Run the Generator

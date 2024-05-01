@@ -34,7 +34,7 @@ MAIN_HEADER_TEXT = """
 <link rel="stylesheet" href="{style_file}"/>
 <script type="text/javascript" src="{script_file}"></script>
 <meta name="generator" content="BikiBikiBob"/>
-<meta name="author" content="{author}"/>
+{extra_meta}
 </head>
 <body onload="main();">
 <div class="site_title_area">
@@ -99,7 +99,11 @@ def ReadConfig(conf_path):
       if not match: continue
       name = match.group(1).strip()
       value = match.group(2).strip()
-      if name:
+      if name in ["extra_meta"]:
+        if name not in config:
+          config[name] = []
+        config[name].append(value)
+      elif name:
         config[name] = value
   base_dir = os.path.dirname(os.path.realpath(conf_path))
   config["input_dir"] = os.path.join(base_dir, config["input_dir"])
@@ -107,7 +111,6 @@ def ReadConfig(conf_path):
   config["script_file"] = os.path.join(base_dir, config["script_file"])
   config["style_file"] = os.path.join(base_dir, config["style_file"])
   if not config["title"]: raise ValueError("empty title in the config")
-  if not config["author"]: raise ValueError("empty author in the config")
   return config
 
 
@@ -329,9 +332,16 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if title:
     page_title = page_title + ": " + title
   site_url = "./"
+  extra_meta = []
+  for expr in config.get("extra_meta") or []:
+    fields = expr.split("|", 1)
+    if len(fields) != 2: continue
+    meta_html = '<meta name="{}" content="{}"/>'.format(
+      esc(fields[0].strip()), esc(fields[1].strip()))
+    extra_meta.append(meta_html)
   main_header = MAIN_HEADER_TEXT.format(
     lang=esc(config["language"]),
-    author=esc(config["author"]),
+    extra_meta="\n".join(extra_meta),
     style_file=esc(os.path.basename(config["style_file"])),
     script_file=esc(os.path.basename(config["script_file"])),
     page_title=esc(page_title),
