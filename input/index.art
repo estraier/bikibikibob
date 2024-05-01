@@ -1,0 +1,11 @@
+* New Articles
+
+@index [order=date] [reverse=true] [max=10]
+
+* About This Site
+
+BikiBikiBob is probably one of the simplest CMSs in the world.  It generates HTML files from text files.  In other words, it is a simple HTML generator.
+
+It is useful to manage small wiki/blog sites.  The wiki-like format of input text files is so simple that you can master it quickly and write articles intuitively.  You can put hyperlinks to organize articles and indices are automatically maintained.
+
+Please read the [[instructions]] page about how to install and use BikiBikiBob.

@@ -1,0 +1,64 @@
+@title duplicated
+@date 2024-03-16
+
+This is a the second of duplicated articles.  Go to the [[first one|duplicated#Header 4]].
+
+* Header 1
+
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+eleven
+twelve
+thirteen
+fourteen
+fifteen
+sixteen
+seventeen
+nineteen
+twelve
+
+* Header 2
+
+>||
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+eleven
+twelve
+thirteen
+fourteen
+fifteen
+sixteen
+seventeen
+nineteen
+twelve
+||<
+
+* Header 3
+
+hop
+step
+jump
+
+* Header 4
+
+>||
+hop
+step
+jump
+||<
