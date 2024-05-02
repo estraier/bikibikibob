@@ -136,6 +136,7 @@ def ReadConfig(conf_path):
 def ReadArticleMetadata(path):
   title = ""
   date = ""
+  misc = ""
   with open(path) as input_file:
     for line in input_file:
       line = line.rstrip()
@@ -145,6 +146,9 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@date +([^\s].*)$", line)
       if match and not date:
         date = match.group(1).strip()
+      match = re.search(r"^@misc +(.*)$", line)
+      if match and not misc:
+        misc = match.group(1).strip()
   if title and not date:
     logger.warning("no date: {}".format(path))
   if date and not title:
@@ -156,6 +160,7 @@ def ReadArticleMetadata(path):
     "path": path,
     "title": title,
     "date": date,
+    "misc": misc,
   }
   return article
 
@@ -281,7 +286,6 @@ def OrganizeSections(lines):
       sections.append(section)
       section_break = True
       continue
-
     if not section_break and sections and sections[-1]["type"] == "p":
       sections[-1]["lines"].append(line)
       continue
@@ -350,7 +354,6 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   page_title = config["title"]
   if title:
     page_title = page_title + ": " + title
-  site_url = config["site_url"]
   extra_meta = []
   for expr in config.get("extra_meta") or []:
     fields = expr.split("|", 1)
@@ -358,6 +361,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     meta_html = '<meta name="{}" content="{}"/>'.format(
       esc(fields[0].strip()), esc(fields[1].strip()))
     extra_meta.append(meta_html)
+  site_url = config["site_url"]
   main_header = MAIN_HEADER_TEXT.format(
     lang=esc(config["language"]),
     extra_meta="\n".join(extra_meta),
@@ -445,10 +449,11 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintYoutube(P, params)
       elif name == "index":
         PrintIndex(P, articles, params)
-      elif name not in ["title", "date"]:
+      elif name not in ["title", "date", "misc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
+  PrintStepLinks(config, P, articles, article)
   print(MAIN_FOOTER_TEXT.strip(), file=output_file)
 
 
@@ -661,6 +666,8 @@ def PrintIndex(P, articles, params):
 
 
 def PrintShareButtons(config, output_file, P, article):
+  misc = [x.strip() for x in (article.get("misc") or "").split(",")]
+  if "noshare" in misc: return
   button_names = config.get("share_button")
   if not button_names: return
   P('<div class="share_button_area">')
@@ -686,6 +693,63 @@ def PrintShareButtons(config, output_file, P, article):
       print(button.strip(), file=output_file)
     P('</td>')
   P('</tr></table></span>')
+  P('</div>')
+
+
+def CutTextByWidth(text, width):
+  new_text = ""
+  score = 0.0
+  for c in text:
+    cp = ord(c)
+    if cp < 0x0200:
+      score += 1.0
+    elif cp < 0x3000:
+      score += 1.5
+    else:
+      score += 2.0
+    if score > width:
+      new_text += "…"
+      break
+    new_text += c
+  return new_text
+
+
+def PrintStepLinks(config, P, articles, article):
+  date = article.get("date")
+  if not date: return
+  date_expr = date + "\0" + os.path.basename(article["path"])
+  prev_article = None
+  prev_date_expr = None
+  next_article = None
+  next_date_expr = None
+  for sibling in articles:
+    if sibling == article: continue
+    sibl_date = sibling.get("date")
+    if not sibl_date: continue
+    sibl_date_expr = sibl_date + "\0" + os.path.basename(sibling["path"])
+    if sibl_date_expr < date_expr and (not prev_date_expr or sibl_date_expr > prev_date_expr):
+      prev_article = sibling
+      prev_date_expr = sibl_date_expr
+    if sibl_date_expr > date_expr and (not next_date_expr or sibl_date_expr < next_date_expr):
+      next_article = sibling
+      next_date_expr = sibl_date_expr
+  P('<div class="step_link_area">')
+  if prev_article:
+    prev_url = GetOutputFilename(os.path.basename(prev_article["path"]))
+    prev_title = CutTextByWidth(prev_article.get("title") or "", 20)
+    if len(prev_title) > 24:
+      prev_title = prev_title[:24] + "…"
+    P('<a href="{}" class="step_button">◁', prev_url, end="")
+    if prev_title:
+      P('<br/><span class="step_title">{}</span>', prev_title)
+    P('</a>')
+  if next_article:
+    next_url = GetOutputFilename(os.path.basename(next_article["path"]))
+    next_title = CutTextByWidth(next_article.get("title") or "", 20)
+    P('<a href="{}" class="step_button">▷', next_url, end="")
+    if next_title:
+      P('<br/><span class="step_title">{}</span>', next_title)
+    P('</a>')
   P('</div>')
 
 

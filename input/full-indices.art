@@ -1,0 +1,26 @@
+@title Full Indices
+@date 2024-02-01 12:34:56
+
+* Order By Title Ascending
+
+@index [order=title]
+
+* Order By Title Descending
+
+@index [order=title] [reverse=true]
+
+* Order By Date Ascending
+
+@index [order=date]
+
+* Order By Date Descending
+
+@index [order=date] [reverse=true]
+
+* Order By Filename Ascending
+
+@index [order=filename]
+
+* Order By Filename Descending
+
+@index [order=filename] [reverse=true]

@@ -1,4 +1,4 @@
-/* page structure */
+/* Page structure */
 html {
     margin: 0;
     padding: 0;
@@ -143,7 +143,6 @@ article.main div.image_area {
     text-align: center;
 }
 article.main span.image_cell {
-    display: inline-box;
     position: relative;
     margin: 0;
     padding: 0;
@@ -188,7 +187,6 @@ article.main div.video_area {
     text-align: center;
 }
 article.main span.video_cell {
-    display: inline-box;
     position: relative;
     margin: 0;
     padding: 0;
@@ -234,7 +232,6 @@ article.main div.youtube_area {
     text-align: center;
 }
 article.main span.youtube_cell {
-    display: inline-box;
     position: relative;
     margin: 0;
     padding: 0;
@@ -271,7 +268,6 @@ article.main div.index_area {
 /* share buttons */
 div.share_button_area {
     margin: 0.8ex 0 0.3ex 0;
-    text-align: right;
     width: 100%;
     text-align: right;
 }
@@ -288,6 +284,38 @@ div.share_button_area span.share_button:hover {
     opacity: 1.0;
 }
 
+/* share buttons */
+div.step_link_area {
+    margin: 0.3ex 0 0.8ex 0;
+    width: 100%;
+    text-align: center;
+}
+div.step_link_area a.step_button {
+    display: inline-block;
+    width: 20ex;
+    min-height: 4ex;
+    margin: 0 0.2ex;
+    padding: 0.5ex 0;
+    text-align: center;
+    line-height: 0.8;
+    white-space: no-wrap;
+    overflow: hidden;
+    background: #def;
+    border: 1px solid #adf;
+    border-radius: 1ex;
+    opacity: 0.5;
+}
+div.step_link_area a.step_button:hover {
+    opacity: 1.0;
+}
+div.step_link_area a.step_button {
+    color: #345;
+    text-decoration: none;    
+}
+
+div.step_link_area span.step_title {
+    font-size: 70%;
+}
 
 /* centering for large screens */
 @media screen and (min-width:750px) {
