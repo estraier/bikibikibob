@@ -92,6 +92,7 @@ article.main pre {
     margin: 0.5ex 0.5ex;
     padding: 0.3ex 0.5ex;
     white-space: pre-wrap;
+    word-break: break-all;
     font-size: 90%;
     background: #f8f8f8;
     border-radius: 0.3ex;
@@ -118,6 +119,7 @@ article.main table {
 }
 article.main td {
     padding: 0 0.5ex;
+    word-break: break-all;
     border: solid 1px #888;
 }
 article.main b {
