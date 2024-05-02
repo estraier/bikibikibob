@@ -30,11 +30,13 @@ MAIN_HEADER_TEXT = """
 <?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="{lang}">
 <head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="generator" content="BikiBikiBob"/>
+{extra_meta}
 <title>{page_title}</title>
 <link rel="stylesheet" href="{style_file}"/>
 <script type="text/javascript" src="{script_file}"></script>
-<meta name="generator" content="BikiBikiBob"/>
-{extra_meta}
 </head>
 <body onload="main();">
 <div class="site_title_area">
