@@ -124,6 +124,15 @@ article.main td {
     word-break: break-all;
     border: solid 1px #888;
 }
+article.main a {
+    color: #02b;
+    text-decoration: none;
+}
+article.main a:hover {
+    color: #02f;
+    text-decoration: underline;
+}
+
 article.main b {
     color: #000;
 }
@@ -164,7 +173,7 @@ article.main span.image_cell:hover span.image_caption {
     opacity: 0.2;
 }
 article.main img.img1 {
-    max-width: 80%;
+    max-width: 70%;
 }
 article.main img.img2 {
     max-width: 45%;
@@ -209,7 +218,7 @@ article.main span.video_cell:hover span.video_caption {
     z-index: -1;
 }
 article.main video.video1 {
-    max-width: 80%;
+    max-width: 70%;
 }
 article.main video.video2 {
     max-width: 45%;
@@ -333,7 +342,7 @@ div.step_link_area span.step_title {
       background: #fff;
   }
   article.main img.img1 {
-      max-height: 560px;
+      max-height: 490px;
   }
   article.main img.img2 {
       max-height: 330px;
