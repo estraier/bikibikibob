@@ -12,6 +12,7 @@ html {
 body {
     display: inline-block;
     text-align: left;
+    line-height: 1.4;
 }
 
 /* site title */
@@ -84,13 +85,14 @@ article.main h5 {
     font-size: 95%;
 }
 article.main p {
-    margin: 0.6ex 0 0.6ex 0;
+    margin: 0.7ex 0;
     padding: 0;
     text-indent: 2ex;
 }
 article.main pre {
-    margin: 0.5ex 0.5ex;
+    margin: 0.6ex 0.5ex;
     padding: 0.3ex 0.5ex;
+    line-height: 1.2;
     white-space: pre-wrap;
     word-break: break-all;
     font-size: 90%;
@@ -98,7 +100,7 @@ article.main pre {
     border-radius: 0.3ex;
 }
 article.main ul {
-    margin: 0.5ex 0.5ex 0.5ex 5ex;
+    margin: 0.6ex 0.5ex 0.6ex 5ex;
     padding: 0;
 }
 article.main li.l1 {
