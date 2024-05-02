@@ -46,6 +46,22 @@ MAIN_FOOTER_TEXT = """
 </body>
 </html>
 """
+TWITTER_BUTTON_TEXT = """
+<span class="share_button" style="display:inline-box;">
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-size="large" data-show-count="true"></a>
+</span>
+<script src="https://platform.twitter.com/widgets.js" charset="utf-8" async="async"></script>
+"""
+FACEBOOK_BUTTON_TEXT = """
+<span class="share_button" style="display:inline-box;line-height:11px;"><div id="fb-root"></div><div class="fb-share-button" data-layout="box_count" data-href="{url}"></div></span>
+<script crossorigin="anonymous" src="https://connect.facebook.net/{locale}/sdk.js#xfbml=1&amp;version=v19.0" nonce="fxDGtCJR" async="async" defer="defer"></script>
+"""
+HATENA_BUTTON_TEXT = """
+<span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" width="20" height="20" style="border: none;"/></a></span>
+<script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async" defer="defer"></script>
+"""
+
+
 
 
 # Prepares the logger.
@@ -99,7 +115,7 @@ def ReadConfig(conf_path):
       if not match: continue
       name = match.group(1).strip()
       value = match.group(2).strip()
-      if name in ["extra_meta"]:
+      if name in ["extra_meta", "share_button"]:
         if name not in config:
           config[name] = []
         config[name].append(value)
@@ -110,6 +126,7 @@ def ReadConfig(conf_path):
   config["output_dir"] = os.path.join(base_dir, config["output_dir"])
   config["script_file"] = os.path.join(base_dir, config["script_file"])
   config["style_file"] = os.path.join(base_dir, config["style_file"])
+  if not config["site_url"]: raise ValueError("empty site_url in the config")
   if not config["title"]: raise ValueError("empty title in the config")
   return config
 
@@ -331,7 +348,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   page_title = config["title"]
   if title:
     page_title = page_title + ": " + title
-  site_url = "./"
+  site_url = config["site_url"]
   extra_meta = []
   for expr in config.get("extra_meta") or []:
     fields = expr.split("|", 1)
@@ -349,6 +366,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     site_subtitle=esc(config["subtitle"]),
     site_url=esc(site_url))
   print(main_header.strip(), file=output_file)
+  P('<article class="main">')
   id_count_index = collections.defaultdict(int)
   if title or date:
     P('<div class="page_title_area">')
@@ -427,6 +445,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintIndex(P, articles, params)
       elif name not in ["title", "date"]:
         logger.warning("unknown meta directive: {}".format(name))
+  P('</article>')
+  PrintShareButtons(config, output_file, P, article)
   print(MAIN_FOOTER_TEXT.strip(), file=output_file)
 
 
@@ -635,6 +655,35 @@ def PrintIndex(P, articles, params):
       P(' <span class="attrdate">({})</span>', date, end="")
     P('</li>')
   P('</ul>')
+  P('</div>')
+
+
+def PrintShareButtons(config, output_file, P, article):
+  button_names = config.get("share_button")
+  if not button_names: return
+  P('<div class="share_button_area">')
+  P('<span class="share_button_container"><table><tr>')
+  dest_url = config["site_url"] + GetOutputFilename(os.path.basename(article["path"]))
+  lang = config["language"]
+  for button_name in button_names:
+    P('<td>')
+    if button_name == "twitter":
+      button = TWITTER_BUTTON_TEXT.format()
+      print(button.strip(), file=output_file)
+    if button_name == "facebook":
+      locale = "en_US"
+      if lang == "ja":
+        locale = "ja_JP"
+      button = FACEBOOK_BUTTON_TEXT.format(
+        url=dest_url,
+        locale=esc(locale))
+      print(button.strip(), file=output_file)
+    if button_name == "hatena":
+      button = HATENA_BUTTON_TEXT.format(
+        lang=esc(lang))
+      print(button.strip(), file=output_file)
+    P('</td>')
+  P('</tr></table></span>')
   P('</div>')
 
 

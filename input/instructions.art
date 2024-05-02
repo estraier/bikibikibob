@@ -35,6 +35,7 @@ input_dir: /home/www/mywiki-input
 output_dir: /home/www/public/mywiki
 script_file: bbb.js
 style_file: bbb.css
+site_url: https://mylovelywiki.gov/mywiki/
 title: The Old Man and the Sea
 subtitle: story of a long struggle to catch a giant marlin
 language: en
