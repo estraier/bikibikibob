@@ -739,14 +739,14 @@ def PrintStepLinks(config, P, articles, article):
     prev_title = CutTextByWidth(prev_article.get("title") or "", 20)
     if len(prev_title) > 24:
       prev_title = prev_title[:24] + "…"
-    P('<a href="{}" class="step_button">◁', prev_url, end="")
+    P('<a href="{}" class="step_button">←', prev_url, end="")
     if prev_title:
       P('<br/><span class="step_title">{}</span>', prev_title)
     P('</a>')
   if next_article:
     next_url = GetOutputFilename(os.path.basename(next_article["path"]))
     next_title = CutTextByWidth(next_article.get("title") or "", 20)
-    P('<a href="{}" class="step_button">▷', next_url, end="")
+    P('<a href="{}" class="step_button">→', next_url, end="")
     if next_title:
       P('<br/><span class="step_title">{}</span>', next_title)
     P('</a>')
