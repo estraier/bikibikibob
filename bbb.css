@@ -91,7 +91,7 @@ article.main p {
 article.main pre {
     margin: 0.5ex 0.5ex;
     padding: 0.3ex 0.5ex;
-    whilte-space: pre-wrap;
+    white-space: pre-wrap;
     font-size: 90%;
     background: #f8f8f8;
     border-radius: 0.3ex;
