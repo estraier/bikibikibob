@@ -128,11 +128,17 @@ article.main a {
     color: #02b;
     text-decoration: none;
 }
-article.main a:hover {
-    color: #02f;
-    text-decoration: underline;
+article.main a.external {
+    color: #20b;
+}
+article.main a.dead {
+    color: #902;
 }
 
+article.main a:hover {
+    color: #04f;
+    text-decoration: underline;
+}
 article.main b {
     color: #000;
 }

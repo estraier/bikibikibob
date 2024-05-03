@@ -484,8 +484,10 @@ def PrintRichPhrase(P, index, text):
   else:
     face = text.strip()
     dest = text.strip()
+  link_class = "internal"
   if re.search(r"^https?://", dest):
     dest_url = dest
+    link_class = "external"
   else:
     match = re.search(r"(^[^#]+)#(.+)$", dest)
     if match:
@@ -504,7 +506,8 @@ def PrintRichPhrase(P, index, text):
       dest_url = ""
   if not dest_url:
     logger.warning("invalid hyperlink: {}: {}".format(face, dest))
-  P('<a href="{}">{}</a>', dest_url, face, end="")
+    link_class = "dead"
+  P('<a href="{}" class="{}">{}</a>', dest_url, link_class, face, end="")
 
 
 def PrintText(P, index, text):
