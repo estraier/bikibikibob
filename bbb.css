@@ -178,19 +178,19 @@ article.main span.image_caption {
 article.main span.image_cell:hover span.image_caption {
     opacity: 0.2;
 }
-article.main img.img1 {
+article.main img.emb_image1 {
     max-width: 70%;
 }
-article.main img.img2 {
+article.main img.emb_image2 {
     max-width: 45%;
 }
-article.main img.img3 {
+article.main img.emb_image3 {
     max-width: 32%;
 }
-article.main img.img4 {
+article.main img.emb_image4 {
     max-width: 24%;
 }
-article.main img.img5 {
+article.main img.emb_image5 {
     max-width: 19%;
 }
 
@@ -223,19 +223,19 @@ article.main span.video_cell:hover span.video_caption {
     opacity: 0.2;
     z-index: -1;
 }
-article.main video.video1 {
+article.main video.emb_video1 {
     max-width: 70%;
 }
-article.main video.video2 {
+article.main video.emb_video2 {
     max-width: 45%;
 }
-article.main video.video3 {
+article.main video.emb_video3 {
     max-width: 32%;
 }
-article.main video.video4 {
+article.main video.emb_video4 {
     max-width: 24%;
 }
-article.main video.video5 {
+article.main video.emb_video5 {
     max-width: 19%;
 }
 
@@ -347,34 +347,34 @@ div.step_link_area span.step_title {
       text-align: left;
       background: #fff;
   }
-  article.main img.img1 {
+  article.main img.emb_image1 {
       max-height: 490px;
   }
-  article.main img.img2 {
+  article.main img.emb_image2 {
       max-height: 330px;
   }
-  article.main img.img3 {
+  article.main img.emb_image3 {
       max-height: 225px;
   }
-  article.main img.img4 {
+  article.main img.emb_image4 {
       max-height: 170px;
   }
-  article.main img.img5 {
+  article.main img.emb_image5 {
       max-height: 140px;
   }
-  article.main video.video1 {
+  article.main video.emb_video1 {
       max-height: 560px;
   }
-  article.main video.video2 {
+  article.main video.emb_video2 {
       max-height: 330px;
   }
-  article.main video.video3 {
+  article.main video.emb_video3 {
       max-height: 225px;
   }
-  article.main video.video4 {
+  article.main video.emb_video4 {
       max-height: 170px;
   }
-  article.main video.video5 {
+  article.main video.emb_video5 {
       max-height: 140px;
   }
   article.main iframe.youtube1 {
@@ -392,10 +392,10 @@ div.step_link_area span.step_title {
     article.main p {
         text-indent: 1.2ex;
     }
-    article.main img.img1 {
+    article.main img.emb_image1 {
         max-width: 90%;
     }
-    article.main video.video1 {
+    article.main video.emb_video1 {
         max-width: 90%;
     }
     article.main table {

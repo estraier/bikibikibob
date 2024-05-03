@@ -562,7 +562,8 @@ def PrintImage(P, params):
     if caption:
       P('<span class="image_caption">{}</span>', caption, end="")
     P('<a href="{}">', url, end="")
-    P('<img src="{}" class="img{}" style="{}"/>', url, len(columns), ";".join(styles), end="")
+    P('<img src="{}" class="emb_image emb_image{}" style="{}"/>',
+      url, len(columns), ";".join(styles), end="")
     P('</a>', end="")
     P('</span>')
   P('</div>')
@@ -594,7 +595,8 @@ def PrintVideo(P, params):
     P('<span class="video_cell">', end="")
     if caption:
       P('<span class="video_caption">{}</span>', caption, end="")
-    P('<video src="{}" controls="controls" preload="metadata" class="video{}" style="{}"/>',
+    P('<video src="{}" controls="controls" preload="metadata"'
+      ' class="emb_video emb_video{}" style="{}"/>',
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
