@@ -1,4 +1,4 @@
-/* Page structure */
+/* page structure */
 html {
     margin: 0;
     padding: 0;
@@ -326,7 +326,7 @@ div.step_link_area span.step_title {
     font-size: 65%;
 }
 
-/* centering for large screens */
+/* for large screens */
 @media screen and (min-width:750px) {
   html {
       background: #eee;
@@ -379,4 +379,29 @@ div.step_link_area span.step_title {
       width: 315px;
       height: 200px
   }
+}
+
+/* for small screens */
+@media screen and (max-width:749px) {
+    article.main p {
+        text-indent: 1.2ex;
+    }
+    article.main img.img1 {
+        max-width: 90%;
+    }
+    article.main video.video1 {
+        max-width: 90%;
+    }
+    article.main table {
+        font-size: 80%;
+    }
+    article.main td {
+        padding: 0 0.3ex;
+    }
+    div.step_link_area a.step_button {
+        width: 14ex;
+    }
+    div.step_link_area span.step_title {
+        font-size: 50%;
+    }
 }
