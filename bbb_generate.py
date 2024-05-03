@@ -70,8 +70,6 @@ HATENA_BUTTON_TEXT = """
 """
 
 
-
-
 # Prepares the logger.
 log_format = "%(levelname)s\t%(message)s"
 logging.basicConfig(format=log_format, stream=sys.stderr)
@@ -347,6 +345,10 @@ def esc(expr):
   return html.escape(str(expr), True)
 
 
+def NormalizeMetaText(text):
+  return re.sub(r"\s+", " ", text).strip()
+
+
 def PrintArticle(config, articles, index, article, sections, output_file):
   def P(*args, end="\n"):
     esc_args = []
@@ -355,8 +357,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         arg = esc(arg)
       esc_args.append(arg)
     print(args[0].format(*esc_args), end=end, file=output_file)
-  title = article.get("title") or ""
-  date = article.get("date") or ""
+  title = NormalizeMetaText(article.get("title") or "")
+  date = NormalizeMetaText(article.get("date") or "")
+  misc = NormalizeMetaText(article.get("misc") or "")
   page_title = config["title"]
   if title:
     page_title = page_title + ": " + title
@@ -365,6 +368,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     extra_meta.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
   if date:
     extra_meta.append('<meta name="x-bbb-date" content="{}"/>'.format(date))
+  if misc:
+    extra_meta.append('<meta name="x-bbb-misc" content="{}"/>'.format(misc))
   for expr in config.get("extra_meta") or []:
     fields = expr.split("|", 1)
     if len(fields) != 2: continue
