@@ -159,8 +159,8 @@ def ReadArticleMetadata(path):
     logger.warning("no date: {}".format(path))
   if date and not title:
     logger.warning("no title: {}".format(path))
-  if (date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) and
-      not re.fullmatch(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", date)):
+  if (date and not re.fullmatch(r"\d{4}/\d{2}/\d{2}", date) and
+      not re.fullmatch(r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", date)):
     logger.warning("invalid date format: {}: {}".format(path, date))
   article = {
     "path": path,
@@ -361,6 +361,10 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if title:
     page_title = page_title + ": " + title
   extra_meta = []
+  if title:
+    extra_meta.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
+  if date:
+    extra_meta.append('<meta name="x-bbb-date" content="{}"/>'.format(date))
   for expr in config.get("extra_meta") or []:
     fields = expr.split("|", 1)
     if len(fields) != 2: continue
