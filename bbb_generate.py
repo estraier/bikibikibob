@@ -50,9 +50,15 @@ MAIN_FOOTER_TEXT = """
 """
 TWITTER_BUTTON_TEXT = """
 <span class="share_button" style="display:inline-box;">
-<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-size="large" data-show-count="true"></a>
+<a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-size="large" data-show-count="false"></a>
 </span>
 <script src="https://platform.twitter.com/widgets.js" charset="utf-8" async="async"></script>
+"""
+LINE_BUTTON_TEXT = """
+<span class="share_button" style="display:inline-box;">
+<div class="line-it-button" data-lang="{lang}" data-type="share-b" data-env="REAL" data-url="{url}" data-color="default" data-size="true" data-count="false" data-ver="3" style="display: none;"></div>
+</span>
+<script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async" defer="defer"></script>
 """
 FACEBOOK_BUTTON_TEXT = """
 <span class="share_button" style="display:inline-box;line-height:11px;"><div id="fb-root"></div><div class="fb-share-button" data-layout="box_count" data-href="{url}"></div></span>
@@ -678,6 +684,11 @@ def PrintShareButtons(config, output_file, P, article):
     P('<td>')
     if button_name == "twitter":
       button = TWITTER_BUTTON_TEXT.format()
+      print(button.strip(), file=output_file)
+    if button_name == "line":
+      button = LINE_BUTTON_TEXT.format(
+        url=dest_url,
+        lang=esc(lang))
       print(button.strip(), file=output_file)
     if button_name == "facebook":
       locale = "en_US"
