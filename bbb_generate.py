@@ -560,7 +560,8 @@ def PrintImage(P, params):
         styles.append("max-width: {}%".format(num_width))
     P('<span class="image_cell">', end="")
     if caption:
-      P('<span class="image_caption">{}</span>', caption, end="")
+      P('<span class="image_caption image_caption{}">{}</span>',
+        len(columns), caption, end="")
     P('<a href="{}">', url, end="")
     P('<img src="{}" class="emb_image emb_image{}" style="{}"/>',
       url, len(columns), ";".join(styles), end="")
@@ -594,7 +595,8 @@ def PrintVideo(P, params):
         styles.append("max-width: {}%".format(num_width))
     P('<span class="video_cell">', end="")
     if caption:
-      P('<span class="video_caption">{}</span>', caption, end="")
+      P('<span class="video_caption video_caption{}">{}</span>',
+        len(columns), caption, end="")
     P('<video src="{}" controls="controls" preload="metadata"'
       ' class="emb_video emb_video{}" style="{}"/>',
       url, len(columns), ";".join(styles), end="")
@@ -627,8 +629,8 @@ def PrintYoutube(P, params):
         styles.append("width: {}%".format(num_width))
     P('<span class="youtube_cell">', end="")
     if caption:
-      P('<span class="youtube_caption">{}</span>', caption, end="")
-
+      P('<span class="youtube_caption youtube_caption{}">{}</span>',
+        len(columns), caption, end="")
     video_id = ""
     match = re.search(r"[?&]v=([_a-zA-Z0-9]+)([&#]|$)", url)
     if match:

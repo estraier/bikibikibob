@@ -175,6 +175,18 @@ article.main span.image_caption {
     color: #000;
     opacity: 0.6;
 }
+article.main span.image_caption2 {
+    font-size: 75%;
+}
+article.main span.image_caption3 {
+    font-size: 70%;
+}
+article.main span.image_caption4 {
+    font-size: 65%;
+}
+article.main span.image_caption5 {
+    font-size: 60%;
+}
 article.main span.image_cell:hover span.image_caption {
     opacity: 0.2;
 }
@@ -218,6 +230,18 @@ article.main span.video_caption {
     font-size: 80%;
     color: #000;
     opacity: 0.6;
+}
+article.main span.video_caption2 {
+    font-size: 75%;
+}
+article.main span.video_caption3 {
+    font-size: 70%;
+}
+article.main span.video_caption4 {
+    font-size: 65%;
+}
+article.main span.video_caption5 {
+    font-size: 60%;
 }
 article.main span.video_cell:hover span.video_caption {
     opacity: 0.2;
@@ -263,6 +287,9 @@ article.main span.youtube_caption {
     font-size: 80%;
     color: #000;
     opacity: 0.6;
+}
+article.main span.youtube_caption2 {
+    font-size: 75%;
 }
 article.main span.youtube_cell:hover span.youtube_caption {
     opacity: 0.2;
