@@ -1,0 +1,274 @@
+#! /usr/bin/python3
+# -*- coding: utf-8 -*-
+#--------------------------------------------------------------------------------------------------
+# Manage comments on articles
+#
+# Copyright 2024 Mikio Hirabayashi
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License.  You may obtain a copy of the License at
+#     https://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied.  See the License for the specific language governing permissions
+# and limitations under the License.
+#--------------------------------------------------------------------------------------------------
+
+
+import cgi
+import datetime
+import dateutil.tz
+import fcntl
+import hashlib
+import html
+import math
+import os
+import re
+import sys
+import time
+import unicodedata
+import urllib
+import urllib.parse
+
+
+RESOURCE_DIR = "output"
+NONCE_SALT = "bbb"
+TIMEZONE_HOURS = 9
+MAX_AUTHOR_LEN = 64
+MAX_TEXT_LEN = 4096
+MAX_FILE_SIZE = 1024 * 1024
+CHECK_REFERRER = True
+CHECK_METHOD = True
+CHECK_NONCE = True
+
+
+def main():
+  request_method = os.environ.get("REQUEST_METHOD", "GET")
+  script_filename = os.environ.get("SCRIPT_FILENAME", "")
+  script_url = os.environ.get("SCRIPT_URI", "")
+  referrer_url = os.environ.get("HTTP_REFERER", "")
+  remote_addr = os.environ.get("REMOTE_ADDR", "")
+  if script_filename:
+    resource_dir = os.path.join(os.path.dirname(script_filename), RESOURCE_DIR)
+  else:
+    resource_dir = RESOURCE_DIR
+  resource_dir = os.path.realpath(resource_dir)
+  form = cgi.FieldStorage()
+  params = {}
+  for key in form.keys():
+    value = form[key]
+    if isinstance(value, list):
+      params[key] = value[0].value
+    else:
+      params[key] = value.value
+  action = params.get("action") or ""
+  if CHECK_REFERRER and script_url and referrer_url:
+    script_parts = urllib.parse.urlparse(script_url)
+    referrer_parts = urllib.parse.urlparse(referrer_url)
+    if referrer_parts.netloc != script_parts.netloc:
+      PrintError(403, "Forbidden", "bad referrer")
+      return
+  if action == "list-resources":
+    DoListResources(resource_dir, params)
+    return
+  if action == "list-comments":
+    DoListComments(resource_dir, params)
+    return
+  if action == "get-nonce":
+    DoGetNonce(resource_dir, params)
+    return
+  if action == "post-comment":
+    if CHECK_METHOD and request_method != "POST":
+      PrintError(403, "Forbidden", "bad method")
+      return
+    DoPostComment(resource_dir, params, remote_addr)
+    return
+  PrintError(400, "Bad Request", "unknown action")
+  return
+
+
+def PrintError(code, name, message):
+  print("Status: {:d} {}".format(code, name))
+  print("Content-Type: text/plain")
+  print()
+  print(message)
+
+
+def GetResourceMeta(path):
+  is_article = False
+  title = ""
+  date = ""
+  try:
+    with open(path) as input_file:
+      num_lines = 0
+      for line in input_file:
+        line = line.strip()
+        if re.search(r'<meta .*name="generator".*content="BikiBikiBob".*/>', line):
+          is_article = True
+          continue
+        match = re.search('<meta .*name="x-bbb-title".*content="(.*?)".*/>', line)
+        if match:
+          title = html.unescape(match.group(1))
+        match = re.search('<meta .*name="x-bbb-date".*content="(.*?)".*/>', line)
+        if match:
+          date = html.unescape(match.group(1))
+        num_lines += 1
+        if num_lines >= 30 or line == "</head>": break
+  except:
+    return None
+  if not is_article:
+    return None
+  return (title, date)
+
+
+def EscapeCommentText(text):
+  text = text.replace("\\", "\\\\")
+  text = text.replace("\n", "\\n")
+  text = re.sub(r"\s", " ", text)
+  return text
+
+
+def GetCurrentDate():
+  date = datetime.datetime.fromtimestamp(time.time(), dateutil.tz.tzlocal())
+  return date.strftime("%Y/%m/%d %H:%M:%S")
+
+
+def GetComments(path):
+  comments = []
+  try:
+    fd = os.open(path, os.O_RDONLY)
+    fcntl.flock(fd, fcntl.LOCK_SH)
+    input_file = os.fdopen(fd, "r")
+    for line in input_file:
+      fields = line.strip().split("\t")
+      if len(fields) != 4: continue
+      comments.append(fields)
+    input_file.close()
+  except:
+    pass
+  return comments
+
+
+def WriteComment(path, date, addr, author, text):
+  esc_text = EscapeCommentText(text)
+  fields = [date, addr, author, esc_text]
+  serialized = "\t".join(fields) + "\n"
+  fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+  fcntl.flock(fd, fcntl.LOCK_EX)
+  new_size = os.fstat(fd).st_size + len(serialized)
+  if new_size > MAX_FILE_SIZE:
+    return False
+  output_file = os.fdopen(fd, "a")
+  output_file.write(serialized)
+  output_file.close()
+  return True
+
+
+def DoListResources(resource_dir, params):
+  names = []
+  for name in os.listdir(resource_dir):
+    if not name.endswith(".xhtml"): continue
+    names.append(re.sub(r"\.xhtml$", "", name))
+  resources = []
+  for name in names:
+    path = os.path.join(resource_dir, name + ".xhtml")
+    meta = GetResourceMeta(path)
+    if not meta: return
+    resources.append((name, meta[0], meta[1]))
+  resources = sorted(resources, key=lambda x: x[0])
+  print("Content-Type: text/plain; charset=UTF-8")
+  print("")
+  for resource in resources:
+    print("\t".join(resource))
+
+
+def CheckResourceName(resource):
+  if not resource: return False
+  if len(resource) > 256: return False
+  if re.search(r"[/]", resource): return False
+  return True
+
+
+def DoListComments(resource_dir, params):
+  p_resource = params.get("resource") or ""
+  if not CheckResourceName(p_resource):
+    PrintError(400, "Bad Request", "bad resource name")
+    return
+  res_path = os.path.join(resource_dir, p_resource + ".xhtml")
+  meta = GetResourceMeta(res_path)
+  if not meta:
+    PrintError(403, "Forbidden", "not an article resource")
+  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  comments = GetComments(cmt_path)
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  for comment in comments:
+    print("\t".join(comment))
+
+
+def CalculateNonce(resource_id, comments):
+  h = hashlib.new('md5')
+  h.update((NONCE_SALT + resource_id).encode())
+  for comment in comments:
+    h.update("".join(comment).encode("UTF-8"))
+  return h.hexdigest()
+
+
+def DoGetNonce(resource_dir, params):
+  p_resource = params.get("resource") or ""
+  if not CheckResourceName(p_resource):
+    PrintError(400, "Bad Request", "bad resource name")
+    return
+  res_path = os.path.join(resource_dir, p_resource + ".xhtml")
+  meta = GetResourceMeta(res_path)
+  if not meta:
+    PrintError(403, "Forbidden", "not an article resource")
+  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  comments = GetComments(cmt_path)
+  nonce = CalculateNonce(p_resource, comments)
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  print(nonce)
+
+
+def DoPostComment(resource_dir, params, remote_addr):
+  p_resource = params.get("resource") or ""
+  p_author = params.get("author") or ""
+  p_text = params.get("text") or ""
+  p_nonce = params.get("nonce") or ""
+  p_author = unicodedata.normalize("NFC", p_author)
+  p_author = re.sub(r"\s+", " ", p_author).strip()
+  p_text = unicodedata.normalize("NFC", p_text)
+  p_text = re.sub(r"\n{3,}", "\n\n", p_text)
+  p_text = re.sub(r"\t", "  ", p_text).strip()
+  if not CheckResourceName(p_resource):
+    PrintError(400, "Bad Request", "bad resource name")
+    return
+  if not p_author or len(p_author) > MAX_AUTHOR_LEN:
+    PrintError(400, "Bad Request", "author is empty or too long")
+    return
+  if not p_text or len(p_text) > MAX_TEXT_LEN:
+    PrintError(400, "Bad Request",  "text is empty or too long")
+    return
+  res_path = os.path.join(resource_dir, p_resource + ".xhtml")
+  meta = GetResourceMeta(res_path)
+  if not meta:
+    PrintError(403, "Forbidden", "not an article resource")
+  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  if CHECK_NONCE:
+    comments = GetComments(cmt_path)
+    nonce = CalculateNonce(p_resource, comments)
+    print(nonce)
+    if p_nonce != nonce:
+      PrintError(409, "Conflict", "nonce doesn't match")
+      return
+  date = GetCurrentDate()
+  if not WriteComment(cmt_path, date, remote_addr, p_author, p_text):
+    PrintError(500, "Internal Server Error", "writing failed")
+    return
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  print("Updated: " + p_resource)
+
+
+if __name__=="__main__":
+  main()
