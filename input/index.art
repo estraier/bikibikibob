@@ -1,3 +1,5 @@
+@misc noshare, nocomment
+
 * New Articles
 
 @index [order=date] [reverse=true] [max=10]
