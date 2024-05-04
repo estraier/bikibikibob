@@ -469,6 +469,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
   PrintStepLinks(config, P, articles, article)
+  PrintComments(config, P, article)
   print(MAIN_FOOTER_TEXT.strip(), file=output_file)
 
 
@@ -779,6 +780,41 @@ def PrintStepLinks(config, P, articles, article):
     P('</a>')
   P('</div>')
 
+
+def PrintComments(config, P, article):
+  misc = [x.strip() for x in (article.get("misc") or "").split(",")]
+  if "nocomment" in misc: return
+  comment_url = config.get("comment_url") or ""
+  if not comment_url: return
+  stem = re.sub(r"\.art$", "", os.path.basename(article["path"]))
+  P('<div class="comment_area" id="comment_area" data-comment-url="{}" data-resource="{}">',
+    comment_url, stem)
+  P('<span id="comment_banner" onclick="render_comments();">comments</span>')
+  P('<div id="comment_list">----</div>')
+  P('<form id="comment_form">')
+  P('<table>')
+  P('<tr>')
+  P('<td class="comment_form_label">name:</td>')
+  P('<td class="comment_form_data">')
+  P('<input type="text" value="" id="comment_author" size="20" autocomplete="off"/>')
+  P('</td>')
+  P('</tr>')
+  P('<tr>')
+  P('<td class="comment_form_label">text:</td>')
+  P('<td class="comment_form_data">')
+  P('<textarea id="comment_text" cols="30" rows="8" autocomplete="off"></textarea>')
+  P('</td>')
+  P('</tr>')
+  P('<tr>')
+  P('<td class="comment_form_label"></td>')
+  P('<td>')
+  P('<input type="submit" value="post" id="comment_submit"/>')
+  P('</td>')
+  P('</tr>')
+  P('</table>')
+  P('</form>')
+  P('</div>')
+    
 
 if __name__ == "__main__":
   sys.exit(main(sys.argv[1:]))

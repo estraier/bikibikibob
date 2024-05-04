@@ -42,6 +42,9 @@ div.site_title_area div.subtitle {
 }
 
 /* page title */
+article.main {
+  margin: 0 0 3ex 0;
+}
 article.main div.page_title_area {
     margin: 0.5ex 0 1ex 0;
     padding: 0;
@@ -95,7 +98,8 @@ article.main pre {
     line-height: 1.2;
     white-space: pre-wrap;
     word-break: break-all;
-    font-size: 90%;
+    font-size: 85%;
+    font-family: monospace;
     background: #f8f8f8;
     border-radius: 0.3ex;
 }
@@ -189,6 +193,7 @@ article.main span.image_caption5 {
 }
 article.main span.image_cell:hover span.image_caption {
     opacity: 0.2;
+    z-index: -1;
 }
 article.main img.emb_image1 {
     max-width: 70%;
@@ -326,7 +331,7 @@ div.share_button_area span.share_button:hover {
     opacity: 1.0;
 }
 
-/* share buttons */
+/* page step links */
 div.step_link_area {
     margin: 0.3ex 0 0.8ex 0;
     width: 100%;
@@ -354,9 +359,94 @@ div.step_link_area a.step_button {
     color: #345;
     text-decoration: none;    
 }
-
 div.step_link_area span.step_title {
     font-size: 65%;
+}
+
+/* comments */
+div.comment_area {
+    margin: 0.3ex 0 0.8ex 0;
+    width: 100%;
+}
+div.comment_area span#comment_banner {
+    display: inline-box;
+    padding: 0.5ex 2ex;
+    text-align: center;
+    background: #eee;
+    border: 1px solid #ddd;
+    border-radius: 1ex;
+    cursor: pointer;
+    opacity: 0.5;
+}
+div.comment_area span#comment_banner:hover {
+    opacity: 1.0;
+}
+div.comment_area div#comment_list {
+    display: none;
+}
+div.comment_area div.comment_item {
+    position: relative;
+    margin: 0.8ex 0;
+    padding: 0;
+    border-top: 1px solid #eee;
+}
+div.comment_area div.comment_message {
+    margin: 1ex 3ex;
+    padding: 0;
+    font-size: 90%;
+    color: #999;
+}
+div.comment_area div.comment_date {
+    position: absolute;
+    top: 1.2ex;
+    right: 1ex;
+    font-size: 80%;
+    color: #999;
+}
+div.comment_area div.comment_author {
+    margin: 1ex 0 0 2ex;
+    font-size: 90%;
+}
+div.comment_area div.comment_text {
+    margin: 0 1ex 0 2ex;
+    padding: 0.3ex 0.5ex;
+    max-height: 24ex;
+    overflow-y: scroll;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 85%;
+    background: #f8f8f8;
+}
+form#comment_form {
+    display: none;
+    border-top: 1px solid #eee;
+}
+div.comment_area table {
+    margin: 0.5ex 0.8ex;
+    width: 85%;
+}
+div.comment_area td {
+    vertical-align: top;
+}
+div.comment_area td.comment_form_label {
+    width: 6ex;
+    text-align: right;
+    font-family: monospace;
+    font-size: 80%;
+    color: #555;
+}
+div.comment_area input#comment_author {
+    width: 20ex;
+    font-size: 90%;
+}
+div.comment_area textarea#comment_text {
+    width: 100%;
+    font-size: 90%;
+}
+div.comment_area input#comment_submit {
+    width: 14ex;
+    font-size: 90%;
+    font-family: monospace;
 }
 
 /* for large screens */
@@ -436,5 +526,9 @@ div.step_link_area span.step_title {
     }
     div.step_link_area span.step_title {
         font-size: 50%;
+   }
+    div.comment_area table {
+        margin: 0.5ex 0.8ex;
+        width: 90%;
     }
 }

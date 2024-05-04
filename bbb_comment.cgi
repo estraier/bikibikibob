@@ -30,7 +30,8 @@ import urllib
 import urllib.parse
 
 
-RESOURCE_DIR = "output"
+#RESOURCE_DIR = "output"
+RESOURCE_DIR = "."
 NONCE_SALT = "bbb"
 TIMEZONE_HOURS = 9
 MAX_AUTHOR_LEN = 64
