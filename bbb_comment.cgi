@@ -74,6 +74,9 @@ def main():
   if action == "list-comments":
     DoListComments(resource_dir, params)
     return
+  if action == "count-comments":
+    DoCountComments(resource_dir, params)
+    return
   if action == "get-nonce":
     DoGetNonce(resource_dir, params)
     return
@@ -187,6 +190,22 @@ def CheckResourceName(resource):
   if len(resource) > 256: return False
   if re.search(r"[/]", resource): return False
   return True
+
+
+def DoCountComments(resource_dir, params):
+  p_resource = params.get("resource") or ""
+  if not CheckResourceName(p_resource):
+    PrintError(400, "Bad Request", "bad resource name")
+    return
+  res_path = os.path.join(resource_dir, p_resource + ".xhtml")
+  meta = GetResourceMeta(res_path)
+  if not meta:
+    PrintError(403, "Forbidden", "not an article resource")
+  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  comments = GetComments(cmt_path)
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  print(len(comments))
 
 
 def DoListComments(resource_dir, params):
