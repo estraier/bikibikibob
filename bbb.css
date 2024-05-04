@@ -378,6 +378,20 @@ div.comment_area span#comment_banner {
     cursor: pointer;
     opacity: 0.5;
 }
+div.comment_area span#comment_banner.comment_filled {
+    background: #efd;
+    border: 1px solid #dec;
+}
+div.comment_area span#comment_banner.comment_recent {
+    background: #fde;
+    border: 1px solid #ecd;
+}
+div.comment_area span.comment_count {
+    margin-left: 0.4ex;
+    font-size: 80%;
+    color: #333;
+}
+
 div.comment_area span#comment_banner:hover {
     opacity: 1.0;
 }

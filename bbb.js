@@ -1,8 +1,8 @@
 "use strict";
 
 function main() {
-  console.log("hello world");
   adjust_images();
+  check_comments();
 }
 
 function adjust_images() {
@@ -25,23 +25,53 @@ function unescape_text(text) {
   return text;
 }
 
-function render_comments() {
+function check_comments() {
   const area = document.getElementById("comment_area");
+  if (!area) return;
   const comment_url = area.dataset.commentUrl;
   const resource = area.dataset.resource;
   if (!comment_url || !resource) return;
+  const request_url = comment_url + "?action=count-comments&resource=" + encodeURI(resource);
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      const lines = xhr.responseText.split("\n");
+      if (lines.length >= 2) {
+        const count = parseInt(lines[0]);
+        const date = parseInt(lines[1]);
+        update_comment_banner(count, date);
+      }
+    }
+  }
+  xhr.open("GET", request_url, true);
+  xhr.send();  
+}
 
+function update_comment_banner(count, date) {
+  const banner = document.getElementById("comment_banner");
+  const comment_count = document.createElement("span");
+  comment_count.className = "comment_count";
+  comment_count.textContent = "(" + count + ")";
+  banner.insertBefore(comment_count, null);
+  if (count > 0) {
+    const diff = new Date().getTime() / 1000 - date;
+    if (diff < 60 * 60 * 24 * 2) {
+      banner.classList.add("comment_recent");
+    } else {
+      banner.classList.add("comment_filled");
+    }
+  }
+}
 
+function render_comments() {
+  const area = document.getElementById("comment_area");
+  if (!area) return;
+  const comment_url = area.dataset.commentUrl;
+  const resource = area.dataset.resource;
+  if (!comment_url || !resource) return;
   const banner = document.getElementById("comment_banner");
   banner.style.display = "none";
-
-  console.log("URL:" + comment_url);
-  console.log("RES:" + resource);
-
-  // hide the button
-
   const request_url = comment_url + "?action=list-comments&resource=" + encodeURI(resource);
-
   const xhr = new XMLHttpRequest();
   xhr.onload = function() {
     if (xhr.status == 200) {
@@ -56,14 +86,14 @@ function render_comments() {
         comment.text = unescape_text(fields[3]);
         comments.push(comment);
       }
-      render_comment_list(comments)
+      update_comment_list(comments)
     }
   }
   xhr.open("GET", request_url, true);
   xhr.send();  
 }
 
-function render_comment_list(comments) {
+function update_comment_list(comments) {
   const pane = document.getElementById("comment_list");
   pane.style.display = "block";
   pane.innerHTML = "";
