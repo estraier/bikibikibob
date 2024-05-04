@@ -44,7 +44,7 @@ function check_comments() {
     }
   }
   xhr.open("GET", request_url, true);
-  xhr.send();  
+  xhr.send();
 }
 
 function update_comment_banner(count, date) {
@@ -87,10 +87,11 @@ function render_comments() {
         comments.push(comment);
       }
       update_comment_list(comments)
+      window.scrollTo(0, document.body.scrollHeight);
     }
   }
   xhr.open("GET", request_url, true);
-  xhr.send();  
+  xhr.send();
 }
 
 function update_comment_list(comments) {
@@ -126,3 +127,90 @@ function update_comment_list(comments) {
   const form = document.getElementById("comment_form");
   form.style.display = "block";  
 }
+
+function post_comment() {
+  const area = document.getElementById("comment_area");
+  if (!area) return;
+  const comment_url = area.dataset.commentUrl;
+  const resource = area.dataset.resource;
+  const author_elem = document.getElementById("comment_author");
+  const text_elem = document.getElementById("comment_text");
+  const author = author_elem.value;
+  const text = text_elem.value;
+  if (author.trim().length < 1) {
+    show_comment_message("empty author");
+    return;
+  }
+  if (text.trim().length < 1) {
+    show_comment_message("empty text");
+    return;
+  }
+  if (text.length > 3000) {
+    show_comment_message("too long text (must be up to 3000 characters)");
+    return;
+  }
+  let current_time = new Date().getTime() / 1000;
+  if (area.last_post_time && current_time - area.last_post_time < 10) {
+    show_comment_message("too quick; please wait for a moment");
+    return;
+  }
+  show_comment_message("checking the nonce ...");
+  const request_url = comment_url + "?action=get-nonce&resource=" + encodeURI(resource);
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      const nonce = xhr.responseText.trim();
+      post_comment_second(comment_url, resource, author, text, nonce);
+    } else {
+      show_comment_message("cannot get the nonce");
+    }
+  }
+  xhr.open("GET", request_url, true);
+  xhr.send();
+}
+
+function post_comment_second(comment_url, resource, author, text, nonce) {
+  const area = document.getElementById("comment_area");
+  const text_elem = document.getElementById("comment_text");
+  show_comment_message("posting the comment ...");
+  const params = [];
+  params.push("action=post-comment");
+  params.push("resource=" + encodeURI(resource));
+  params.push("author=" + encodeURI(author));
+  params.push("text=" + encodeURI(text));
+  params.push("nonce=" + encodeURI(nonce));
+  const joined_params = params.join("&");
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      show_comment_message("posted successfully");
+      text_elem.value = "";
+      let current_time = new Date().getTime() / 1000;
+      area.last_post_time = current_time;
+      render_comments();
+    } else if (xhr.status == 409) {
+      show_comment_message("posting conflicted; please try again");
+    }
+  }
+  xhr.open("POST", comment_url, true);
+  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.send(joined_params);
+}
+
+function show_comment_message(message) {
+  const message_elem = document.getElementById("comment_message");
+  message_elem.textContent = message;
+  if (message) {
+    message_elem.style.display = "inline";
+  } else {
+    message_elem.style.display = "none";
+  }
+  if (message_elem.last_cleaner) {
+    clearTimeout(message_elem.last_cleaner);
+  }
+  message_elem.last_cleaner = setTimeout(function() {
+    message_elem.style.display = "none";
+  }, 3000);
+}
+
+// END OF FILE

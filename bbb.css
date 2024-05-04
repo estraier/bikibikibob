@@ -457,10 +457,21 @@ div.comment_area textarea#comment_text {
     width: 100%;
     font-size: 90%;
 }
-div.comment_area input#comment_submit {
+div.comment_area button#comment_post {
     width: 14ex;
     font-size: 90%;
     font-family: monospace;
+}
+div.comment_area span#comment_message {
+    display: none;
+    margin-left: 1.5ex;
+    padding: 0.2ex 1ex;
+    font-size: 85%;
+    font-family: monospace;
+    color: #555;
+    background: #ffe;
+    border: 1pt solid #eed;
+    border-radius: 1ex;
 }
 
 /* for large screens */

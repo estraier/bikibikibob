@@ -37,7 +37,7 @@ MAX_AUTHOR_LEN = 64
 MAX_TEXT_LEN = 4096
 MAX_FILE_SIZE = 1024 * 1024
 CHECK_REFERRER = True
-CHECK_METHOD = True
+CHECK_METHOD = False
 CHECK_NONCE = True
 
 
@@ -294,7 +294,6 @@ def DoPostComment(resource_dir, params, remote_addr):
   if CHECK_NONCE:
     comments = GetComments(cmt_path)
     nonce = CalculateNonce(p_resource, comments)
-    print(nonce)
     if p_nonce != nonce:
       PrintError(409, "Conflict", "nonce doesn't match")
       return
@@ -309,3 +308,6 @@ def DoPostComment(resource_dir, params, remote_addr):
 
 if __name__=="__main__":
   main()
+
+
+# END OF FILE
