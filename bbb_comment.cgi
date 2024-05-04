@@ -33,7 +33,6 @@ import urllib.parse
 #RESOURCE_DIR = "output"
 RESOURCE_DIR = "."
 NONCE_SALT = "bbb"
-TIMEZONE_HOURS = 9
 MAX_AUTHOR_LEN = 64
 MAX_TEXT_LEN = 4096
 MAX_FILE_SIZE = 1024 * 1024
@@ -192,6 +191,15 @@ def CheckResourceName(resource):
   return True
 
 
+def DateToUnixTime(date):
+  match = re.fullmatch(r"(\d{4})/(\d{2})/(\d{2}) (\d{2}):(\d{2}):(\d{2})", date)
+  ts = datetime.datetime(
+    int(match.group(1)), int(match.group(2)), int(match.group(3)),
+    int(match.group(4)), int(match.group(5)), int(match.group(6)),
+    tzinfo=dateutil.tz.tzlocal())
+  return int(ts.timestamp())
+  
+
 def DoCountComments(resource_dir, params):
   p_resource = params.get("resource") or ""
   if not CheckResourceName(p_resource):
@@ -204,12 +212,12 @@ def DoCountComments(resource_dir, params):
     return
   cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
+  count = len(comments)
+  date = -1
+  if comments:
+    date = DateToUnixTime(comments[-1][0])
   print("Content-Type: text/plain; charset=UTF-8")
   print()
-  count = len(comments)
-  date = "-"
-  if comments:
-    date = comments[-1][0]
   print(count)
   print(date)
 
