@@ -184,6 +184,8 @@ def ReadInputDir(config, focus_names):
     if focus_stem_set and stem not in focus_stem_set: continue
     path = os.path.join(input_dir, name)
     article = ReadArticleMetadata(path)
+    article["name"] = name
+    article["stem"] = stem
     articles.append(article)
   return sorted(articles, key=lambda x: x["path"])
 
@@ -323,7 +325,7 @@ def ToBool(expr):
 def MakeArticle(config, articles, index, article):
   article_path = article["path"]
   output_dir = config["output_dir"]
-  in_article_name = os.path.basename(article_path)
+  in_article_name = article["name"]
   out_article_name = GetOutputFilename(in_article_name)
   out_article_path = os.path.join(output_dir, out_article_name)
   if os.path.exists(out_article_path):
@@ -392,7 +394,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if title or date:
     P('<div class="page_title_area">')
     if title:
-      page_url = os.path.basename(article["path"])
+      page_url = article["name"]
       page_url = GetOutputFilename(page_url)
       P('<h2><a href="{}">{}</a></h2>', urllib.parse.quote(page_url), title)
     if date:
@@ -508,8 +510,7 @@ def PrintRichPhrase(P, index, text):
       dest_fragment = ""
     dest_article = index.get(dest_title.lower())
     if dest_article:
-      dest_url = GetOutputFilename(
-        "./" + urllib.parse.quote(os.path.basename(dest_article["path"])))
+      dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
       if dest_fragment:
         dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
     else:
@@ -672,12 +673,11 @@ def PrintIndex(P, articles, params):
     articles = articles[:max_num]
   P('<ul>')
   for article in articles:
-    path = article.get("path")
-    name = os.path.basename(path)
+    name = article["name"]
     url = "./" + GetOutputFilename(name)
     title = article.get("title")
     if not title:
-      title = re.sub(r"\.art$", "", os.path.basename(name))
+      title = article["stem"]
     date = article.get("date")
     P('<li>', end="")
     P('<a href="{}">{}</a>', url, title, end="")
@@ -695,7 +695,7 @@ def PrintShareButtons(config, output_file, P, article):
   if not button_names: return
   P('<div class="share_button_area">')
   P('<span class="share_button_container"><table><tr>')
-  dest_url = config["site_url"] + GetOutputFilename(os.path.basename(article["path"]))
+  dest_url = config["site_url"] + GetOutputFilename(article["name"])
   lang = config["language"]
   for button_name in button_names:
     P('<td>')
@@ -743,28 +743,52 @@ def CutTextByWidth(text, width):
 
 
 def PrintStepLinks(config, P, articles, article):
-  date = article.get("date")
-  if not date: return
-  date_expr = date + "\0" + os.path.basename(article["path"])
+  step_order = config.get("step_order")
+  name = article["name"]
+  title = article.get("title") or ""
+  date = article.get("date") or ""
+  if step_order == "title":
+    if not title: return
+    self_expr = title + "\0" + name
+  elif step_order == "date":
+    if not date: return
+    self_expr = date + "\0" + name
+  elif step_order == "filename":
+    self_expr = name
+  else:
+    return
   prev_article = None
-  prev_date_expr = None
+  prev_expr = None
   next_article = None
-  next_date_expr = None
+  next_expr = None
   for sibling in articles:
     if sibling == article: continue
-    sibl_date = sibling.get("date")
-    if not sibl_date: continue
-    sibl_date_expr = sibl_date + "\0" + os.path.basename(sibling["path"])
-    if sibl_date_expr < date_expr and (not prev_date_expr or sibl_date_expr > prev_date_expr):
+    sibl_name = sibling["name"]
+    sibl_title = sibling.get("title") or ""
+    sibl_date = sibling.get("date") or ""
+    if step_order == "title":
+      if not sibl_title: continue
+      sibl_expr = sibl_title + "\0" + sibl_name
+    elif step_order == "date":
+      if not sibl_date: continue
+      sibl_expr = sibl_date + "\0" + sibl_name
+    elif step_order == "filename":
+      sibl_expr = sibl_name
+    else:
+      continue
+    if sibl_expr < self_expr and (not prev_expr or sibl_expr > prev_expr):
       prev_article = sibling
-      prev_date_expr = sibl_date_expr
-    if sibl_date_expr > date_expr and (not next_date_expr or sibl_date_expr < next_date_expr):
+      prev_expr = sibl_expr
+    if sibl_expr > self_expr and (not next_expr or sibl_expr < next_expr):
       next_article = sibling
-      next_date_expr = sibl_date_expr
+      next_expr = sibl_expr
   P('<div class="step_link_area">')
   if prev_article:
-    prev_url = GetOutputFilename(os.path.basename(prev_article["path"]))
-    prev_title = CutTextByWidth(prev_article.get("title") or "", 20)
+    prev_url = GetOutputFilename(prev_article["name"])
+    prev_title = prev_article.get("title")
+    if not prev_title:
+      prev_title = prev_article["stem"]
+    prev_title = CutTextByWidth(prev_title, 20)
     if len(prev_title) > 24:
       prev_title = prev_title[:24] + "…"
     P('<a href="{}" class="step_button">←', prev_url, end="")
@@ -772,8 +796,11 @@ def PrintStepLinks(config, P, articles, article):
       P('<br/><span class="step_title">{}</span>', prev_title)
     P('</a>')
   if next_article:
-    next_url = GetOutputFilename(os.path.basename(next_article["path"]))
-    next_title = CutTextByWidth(next_article.get("title") or "", 20)
+    next_url = GetOutputFilename(next_article["name"])
+    next_title = next_article.get("title")
+    if not next_title:
+      next_title = next_article["stem"]
+    next_title = CutTextByWidth(next_title or "", 20)
     P('<a href="{}" class="step_button">→', next_url, end="")
     if next_title:
       P('<br/><span class="step_title">{}</span>', next_title)
@@ -786,7 +813,7 @@ def PrintComments(config, P, article):
   if "nocomment" in misc: return
   comment_url = config.get("comment_url") or ""
   if not comment_url: return
-  stem = re.sub(r"\.art$", "", os.path.basename(article["path"]))
+  stem = article["stem"]
   P('<div class="comment_area" id="comment_area" data-comment-url="{}" data-resource="{}">',
     comment_url, stem)
   P('<span id="comment_banner" onclick="render_comments();">comments</span>')
