@@ -201,11 +201,17 @@ def DoCountComments(resource_dir, params):
   meta = GetResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
+    return
   cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   print("Content-Type: text/plain; charset=UTF-8")
   print()
-  print(len(comments))
+  count = len(comments)
+  date = "-"
+  if comments:
+    date = comments[-1][0]
+  print(count)
+  print(date)
 
 
 def DoListComments(resource_dir, params):
@@ -217,6 +223,7 @@ def DoListComments(resource_dir, params):
   meta = GetResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
+    return
   cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   print("Content-Type: text/plain; charset=UTF-8")
@@ -242,6 +249,7 @@ def DoGetNonce(resource_dir, params):
   meta = GetResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
+    return
   cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   nonce = CalculateNonce(p_resource, comments)
@@ -273,6 +281,7 @@ def DoPostComment(resource_dir, params, remote_addr):
   meta = GetResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
+    return
   cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
   if CHECK_NONCE:
     comments = GetComments(cmt_path)
