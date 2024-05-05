@@ -98,6 +98,13 @@ function render_comments() {
   };
   xhr.open("GET", request_url, true);
   xhr.send();
+  const author_elem = document.getElementById("comment_author");
+  if (author_elem.value.length == 0) {
+    const saved_user_name = load_user_name();
+    if (saved_user_name) {
+      author_elem.value = saved_user_name;
+    }
+  }
 }
 
 function update_comment_list(comments) {
@@ -201,6 +208,7 @@ function post_comment_second(comment_url, resource, author, text, nonce) {
       let current_time = new Date().getTime() / 1000;
       area.last_post_time = current_time;
       render_comments();
+      save_user_name(author);
     } else if (xhr.status == 409) {
       show_comment_message("posting conflicted; please try again");
     } else {
@@ -229,6 +237,16 @@ function show_comment_message(message) {
   message_elem.last_cleaner = setTimeout(function() {
     message_elem.style.display = "none";
   }, 3000);
+}
+
+function save_user_name(name) {
+  if (!localStorage) return;
+  return localStorage.setItem("user_name", name);
+}
+
+function load_user_name() {
+  if (!localStorage) return null;
+  return localStorage.getItem("user_name");
 }
 
 // END OF FILE
