@@ -30,8 +30,8 @@ import urllib
 import urllib.parse
 
 
-#RESOURCE_DIR = "output"
-RESOURCE_DIR = "."
+HTML_DIR = "."
+COMMENT_DIR = "."
 NONCE_SALT = "bbb"
 MAX_AUTHOR_LEN = 64
 MAX_TEXT_LEN = 4096
@@ -48,9 +48,11 @@ def main():
   referrer_url = os.environ.get("HTTP_REFERER", "")
   remote_addr = os.environ.get("REMOTE_ADDR", "")
   if script_filename:
-    resource_dir = os.path.join(os.path.dirname(script_filename), RESOURCE_DIR)
+    resource_dir = os.path.join(os.path.dirname(script_filename), HTML_DIR)
+    comment_dir = os.path.join(os.path.dirname(script_filename), COMMENT_DIR)
   else:
-    resource_dir = RESOURCE_DIR
+    resource_dir = HTML_DIR
+    comment_dir = COMMENT_DIR
   resource_dir = os.path.realpath(resource_dir)
   form = cgi.FieldStorage()
   params = {}
@@ -71,19 +73,19 @@ def main():
     DoListResources(resource_dir, params)
     return
   if action == "list-comments":
-    DoListComments(resource_dir, params)
+    DoListComments(resource_dir, comment_dir, params)
     return
   if action == "count-comments":
-    DoCountComments(resource_dir, params)
+    DoCountComments(resource_dir, comment_dir, params)
     return
   if action == "get-nonce":
-    DoGetNonce(resource_dir, params)
+    DoGetNonce(resource_dir, comment_dir, params)
     return
   if action == "post-comment":
     if CHECK_METHOD and request_method != "POST":
       PrintError(403, "Forbidden", "bad method")
       return
-    DoPostComment(resource_dir, params, remote_addr)
+    DoPostComment(resource_dir, comment_dir, params, remote_addr)
     return
   PrintError(400, "Bad Request", "unknown action")
   return
@@ -200,7 +202,7 @@ def DateToUnixTime(date):
   return int(ts.timestamp())
   
 
-def DoCountComments(resource_dir, params):
+def DoCountComments(resource_dir, comment_dir, params):
   p_resource = params.get("resource") or ""
   if not CheckResourceName(p_resource):
     PrintError(400, "Bad Request", "bad resource name")
@@ -210,7 +212,7 @@ def DoCountComments(resource_dir, params):
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
-  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   count = len(comments)
   date = -1
@@ -222,7 +224,7 @@ def DoCountComments(resource_dir, params):
   print(date)
 
 
-def DoListComments(resource_dir, params):
+def DoListComments(resource_dir, comment_dir, params):
   p_resource = params.get("resource") or ""
   if not CheckResourceName(p_resource):
     PrintError(400, "Bad Request", "bad resource name")
@@ -232,7 +234,7 @@ def DoListComments(resource_dir, params):
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
-  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   print("Content-Type: text/plain; charset=UTF-8")
   print()
@@ -248,7 +250,7 @@ def CalculateNonce(resource_id, comments):
   return h.hexdigest()
 
 
-def DoGetNonce(resource_dir, params):
+def DoGetNonce(resource_dir, comment_dir, params):
   p_resource = params.get("resource") or ""
   if not CheckResourceName(p_resource):
     PrintError(400, "Bad Request", "bad resource name")
@@ -258,7 +260,7 @@ def DoGetNonce(resource_dir, params):
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
-  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   comments = GetComments(cmt_path)
   nonce = CalculateNonce(p_resource, comments)
   print("Content-Type: text/plain; charset=UTF-8")
@@ -266,7 +268,7 @@ def DoGetNonce(resource_dir, params):
   print(nonce)
 
 
-def DoPostComment(resource_dir, params, remote_addr):
+def DoPostComment(resource_dir, comment_dir, params, remote_addr):
   p_resource = params.get("resource") or ""
   p_author = params.get("author") or ""
   p_text = params.get("text") or ""
@@ -290,7 +292,7 @@ def DoPostComment(resource_dir, params, remote_addr):
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
-  cmt_path = os.path.join(resource_dir, p_resource + ".cmt")
+  cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   if CHECK_NONCE:
     comments = GetComments(cmt_path)
     nonce = CalculateNonce(p_resource, comments)
