@@ -42,7 +42,10 @@ function check_comments() {
         update_comment_banner(count, date);
       }
     }
-  }
+  };
+  xhr.onerror = function() {
+    alert('networking error while counting comments')
+  };
   xhr.open("GET", request_url, true);
   xhr.send();
 }
@@ -89,7 +92,10 @@ function render_comments() {
       update_comment_list(comments)
       window.scrollTo(0, document.body.scrollHeight);
     }
-  }
+  };
+  xhr.onerror = function() {
+    alert('networking error while getting comments')
+  };
   xhr.open("GET", request_url, true);
   xhr.send();
 }
@@ -141,6 +147,10 @@ function post_comment() {
     show_comment_message("empty author");
     return;
   }
+  if (author.length > 30) {
+    show_comment_message("too long name (must be up to 30 characters)");
+    return;
+  }
   if (text.trim().length < 1) {
     show_comment_message("empty text");
     return;
@@ -164,7 +174,10 @@ function post_comment() {
     } else {
       show_comment_message("cannot get the nonce");
     }
-  }
+  };
+  xhr.onerror = function() {
+    alert('networking error while checking the nonce')
+  };
   xhr.open("GET", request_url, true);
   xhr.send();
 }
@@ -190,7 +203,12 @@ function post_comment_second(comment_url, resource, author, text, nonce) {
       render_comments();
     } else if (xhr.status == 409) {
       show_comment_message("posting conflicted; please try again");
+    } else {
+      show_comment_message("posting failed");
     }
+  }
+  xhr.onerror = function() {
+    alert('networking error while posting the comment')
   }
   xhr.open("POST", comment_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
