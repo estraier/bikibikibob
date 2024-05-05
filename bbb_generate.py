@@ -284,7 +284,7 @@ def OrganizeSections(lines):
       sections.append(section)
       section_break = True
       continue
-    match = re.search(r"^@[a-z]+ ", line)
+    match = re.search(r"^@[-_a-z]+ ", line)
     if match:
       section = {
         "type": "meta",
@@ -466,7 +466,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         P('{}', line)
       P('</pre>')
     if elem_type == "meta":
-      match = re.search("^@([a-z]+) +(.*)$", lines[0])
+      match = re.search("^@([-_a-z]+) +(.*)$", lines[0])
       name = match.group(1)
       params = match.group(2)
       if name == "image":
@@ -477,6 +477,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintYoutube(P, params)
       elif name == "index":
         PrintIndex(P, articles, params)
+      elif name == "comment-history":
+        PrintCommentHistory(config, P, params)
       elif name not in ["title", "date", "misc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
@@ -548,22 +550,28 @@ def PrintText(P, index, text):
       break
 
 
+def ParseMetaParams(params):
+  attrs = {}
+  while True:
+    match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", params)
+    if match:
+      attr_name = match.group(2).strip()
+      attr_value = match.group(3).strip()
+      attrs[attr_name] = attr_value
+      params = (match.group(1) + " " + match.group(4)).strip()
+    else:
+      break
+  attrs[""] = params.strip()
+  return attrs
+
+
 def PrintImage(P, params):
   P('<div class="image_area">')
   columns = params.split("|")
   for column in columns:
     column = column.strip()
-    attrs = {}
-    while True:
-      match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", column)
-      if match:
-        attr_name = match.group(2).strip()
-        attr_value = match.group(3).strip()
-        attrs[attr_name] = attr_value
-        column = (match.group(1) + " " + match.group(4)).strip()
-      else:
-        break
-    url = column
+    attrs = ParseMetaParams(column)
+    url = attrs[""]
     caption = attrs.get("caption")
     width = attrs.get("width")
     styles = []
@@ -588,17 +596,8 @@ def PrintVideo(P, params):
   columns = params.split("|")
   for column in columns:
     column = column.strip()
-    attrs = {}
-    while True:
-      match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", column)
-      if match:
-        attr_name = match.group(2).strip()
-        attr_value = match.group(3).strip()
-        attrs[attr_name] = attr_value
-        column = (match.group(1) + " " + match.group(4)).strip()
-      else:
-        break
-    url = column
+    attrs = ParseMetaParams(column)
+    url = attrs[""]
     caption = attrs.get("caption")
     width = attrs.get("width")
     styles = []
@@ -622,17 +621,8 @@ def PrintYoutube(P, params):
   columns = params.split("|")
   for column in columns:
     column = column.strip()
-    attrs = {}
-    while True:
-      match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", column)
-      if match:
-        attr_name = match.group(2).strip()
-        attr_value = match.group(3).strip()
-        attrs[attr_name] = attr_value
-        column = (match.group(1) + " " + match.group(4)).strip()
-      else:
-        break
-    url = column
+    attrs = ParseMetaParams(column)
+    url = attrs[""]
     caption = attrs.get("caption")
     width = attrs.get("width")
     styles = []
@@ -659,16 +649,7 @@ def PrintYoutube(P, params):
 
 def PrintIndex(P, articles, params):
   P('<div class="index_area">')
-  attrs = {}
-  while True:
-    match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", params)
-    if match:
-      attr_name = match.group(2).strip()
-      attr_value = match.group(3).strip()
-      attrs[attr_name] = attr_value
-      params = (match.group(1) + " " + match.group(4)).strip()
-    else:
-      break
+  attrs = ParseMetaParams(params)
   order = attrs.get("order")
   reverse = ToBool(attrs.get("reverse"))
   max_num = int(attrs.get("max") or 0)
@@ -697,6 +678,14 @@ def PrintIndex(P, articles, params):
     P('</li>')
   P('</ul>')
   P('</div>')
+
+
+def PrintCommentHistory(config, P, params):
+  attrs = ParseMetaParams(params)
+  max_num = int(attrs.get("max") or 0)
+  comment_url = config.get("comment_url") or ""
+  P('<div class="comment_history_area" data-comment-url="{}" data-comment-max="{}"></div>',
+    comment_url, max_num)
 
 
 def PrintShareButtons(config, output_file, P, article):
@@ -853,7 +842,7 @@ def PrintComments(config, P, article):
   P('</table>')
   P('</form>')
   P('</div>')
-    
+
 
 if __name__ == "__main__":
   sys.exit(main(sys.argv[1:]))
