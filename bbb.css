@@ -12,12 +12,12 @@ html {
 body {
     display: inline-block;
     text-align: left;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 /* site title */
 div.site_title_area {
-    margin: 0.5ex 0 1ex 0;
+    margin: 0.5ex 0 1.2ex 0;
 }
 div.site_title_area h1 {
     margin: 0;
@@ -46,8 +46,9 @@ article.main {
   margin: 0 0 3ex 0;
 }
 article.main div.page_title_area {
-    margin: 0.5ex 0 1ex 0;
+    margin: 0.5ex 0 1.2ex 0;
     padding: 0;
+    border-bottom: 1px dashed #aaa;
 }
 article.main h2 {
     margin: 0;
@@ -72,28 +73,28 @@ article.main div.date {
 
 /* page content */
 article.main h3 {
-    margin: 1.4ex 0 1.0ex 0;
+    margin: 1.5ex 0 1.2ex 0;
     padding: 0;
     font-size: 105%;
     color: #000;
 }
 article.main h4 {
-    margin: 1.2ex 0 0.8ex 0;
+    margin: 1.3ex 0 0.9ex 0;
     padding: 0 1ex;
     font-size: 100%;
 }
 article.main h5 {
-    margin: 1.0ex 0 0.6ex 0;
+    margin: 1.1ex 0 0.7ex 0;
     padding: 0 2ex;
     font-size: 95%;
 }
 article.main p {
-    margin: 0.7ex 0;
+    margin: 0.8ex 0;
     padding: 0;
     text-indent: 2ex;
 }
 article.main pre {
-    margin: 0.6ex 0.5ex;
+    margin: 0.7ex 0.5ex;
     padding: 0.3ex 0.5ex;
     line-height: 1.2;
     white-space: pre-wrap;
@@ -104,7 +105,7 @@ article.main pre {
     border-radius: 0.3ex;
 }
 article.main ul {
-    margin: 0.6ex 0.5ex 0.6ex 5ex;
+    margin: 0.8ex 0.5ex 0.8ex 5ex;
     padding: 0;
 }
 article.main li.l1 {
@@ -138,7 +139,6 @@ article.main a.external {
 article.main a.dead {
     color: #902;
 }
-
 article.main a:hover {
     color: #04f;
     text-decoration: underline;
@@ -156,7 +156,7 @@ article.main kbd {
 
 /* images */
 article.main div.image_area {
-    margin: 0.7ex 0;
+    margin: 0.8ex 0;
     padding: 0;
     width: 100%;
     text-align: center;
@@ -213,7 +213,7 @@ article.main img.emb_image5 {
 
 /* videos */
 article.main div.video_area {
-    margin: 0.7ex 0;
+    margin: 0.8ex 0;
     padding: 0;
     width: 100%;
     text-align: center;
@@ -270,7 +270,7 @@ article.main video.emb_video5 {
 
 /* youtube */
 article.main div.youtube_area {
-    margin: 0.7ex 0;
+    margin: 0.8ex 0;
     padding: 0;
     width: 100%;
     text-align: center;
@@ -309,7 +309,7 @@ article.main iframe.youtube2 {
 
 /* indices */
 article.main div.index_area {
-    margin: 0.7ex 0;
+    margin: 0.8ex 0;
 }
 
 /* share buttons */
@@ -333,7 +333,7 @@ div.share_button_area span.share_button:hover {
 
 /* page step links */
 div.step_link_area {
-    margin: 0.3ex 0 0.8ex 0;
+    margin: 0.8ex 0;
     width: 100%;
     text-align: center;
 }

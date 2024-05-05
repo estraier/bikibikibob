@@ -142,8 +142,20 @@ def ReadArticleMetadata(path):
   date = ""
   misc = ""
   with open(path) as input_file:
+    end_pre_line = ""
     for line in input_file:
       line = line.rstrip()
+      if end_pre_line:
+        if line == end_pre_line:
+          end_pre_line = ""
+        continue
+      else:
+        match = re.search(r"^(>+)\|([a-z]*)\|$", line)
+        if match:
+          print(match)
+          end_pre_line = "||" + ("<" * len(match.group(1)))
+          print(end_pre_line)
+          continue
       match = re.search(r"^@title +([^\s].*)$", line)
       if match and not title:
         title = match.group(1).strip()
@@ -225,13 +237,14 @@ def OrganizeSections(lines):
     if not line:
       section_break = True
       continue
-    match = re.search(r"^>\|\|$", line)
+    match = re.search(r"^(>+)\|([a-z]*)\|$", line)
     if match:
+      end_line = "||" + ("<" * len(match.group(1)))
       pre_lines = []
       while i < len(lines):
         line = lines[i]
         i += 1
-        if re.search(r"^\|\|<$", line):
+        if line == end_line:
           break
         pre_lines.append(line)
       section = {
