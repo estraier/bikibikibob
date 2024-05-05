@@ -32,7 +32,7 @@ import urllib.parse
 
 HTML_DIR = "."
 COMMENT_DIR = "."
-HISTORY_FILE = "__comment_history__.tsv"
+HISTORY_FILE = "__cmthst__.tsv"
 NONCE_SALT = "bbb"
 MAX_AUTHOR_LEN = 32
 MAX_TEXT_LEN = 3000
@@ -89,6 +89,9 @@ def main():
       return
     DoPostComment(resource_dir, comment_dir, params, remote_addr)
     return
+  if action == "list-history":
+    DoListHistory(comment_dir, params)
+    return
   PrintError(400, "Bad Request", "unknown action")
   return
 
@@ -100,7 +103,14 @@ def PrintError(code, name, message):
   print(message)
 
 
-def GetResourceMeta(path):
+def TextToInt(text):
+  try:
+    return int(text)
+  except:
+    return 0
+
+
+def ReadResourceMeta(path):
   is_article = False
   title = ""
   date = ""
@@ -139,7 +149,7 @@ def GetCurrentDate():
   return date.strftime("%Y/%m/%d %H:%M:%S")
 
 
-def GetComments(path):
+def ReadComments(path):
   comments = []
   try:
     fd = os.open(path, os.O_RDONLY)
@@ -148,6 +158,7 @@ def GetComments(path):
     for line in input_file:
       fields = line.strip().split("\t")
       if len(fields) != 4: continue
+      del fields[1]
       comments.append(fields)
     input_file.close()
   except:
@@ -216,7 +227,7 @@ def DoListResources(resource_dir, params):
   resources = []
   for name in names:
     path = os.path.join(resource_dir, name + ".xhtml")
-    meta = GetResourceMeta(path)
+    meta = ReadResourceMeta(path)
     if not meta: return
     resources.append((name, meta[0], meta[1]))
   resources = sorted(resources, key=lambda x: x[0])
@@ -248,12 +259,12 @@ def DoCountComments(resource_dir, comment_dir, params):
     PrintError(400, "Bad Request", "bad resource name")
     return
   res_path = os.path.join(resource_dir, p_resource + ".xhtml")
-  meta = GetResourceMeta(res_path)
+  meta = ReadResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
   cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
-  comments = GetComments(cmt_path)
+  comments = ReadComments(cmt_path)
   count = len(comments)
   date = -1
   if comments:
@@ -270,12 +281,12 @@ def DoListComments(resource_dir, comment_dir, params):
     PrintError(400, "Bad Request", "bad resource name")
     return
   res_path = os.path.join(resource_dir, p_resource + ".xhtml")
-  meta = GetResourceMeta(res_path)
+  meta = ReadResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
   cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
-  comments = GetComments(cmt_path)
+  comments = ReadComments(cmt_path)
   print("Content-Type: text/plain; charset=UTF-8")
   print()
   for comment in comments:
@@ -296,12 +307,12 @@ def DoGetNonce(resource_dir, comment_dir, params):
     PrintError(400, "Bad Request", "bad resource name")
     return
   res_path = os.path.join(resource_dir, p_resource + ".xhtml")
-  meta = GetResourceMeta(res_path)
+  meta = ReadResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
   cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
-  comments = GetComments(cmt_path)
+  comments = ReadComments(cmt_path)
   nonce = CalculateNonce(p_resource, comments)
   print("Content-Type: text/plain; charset=UTF-8")
   print()
@@ -328,14 +339,14 @@ def DoPostComment(resource_dir, comment_dir, params, remote_addr):
     PrintError(400, "Bad Request",  "text is empty or too long")
     return
   res_path = os.path.join(resource_dir, p_resource + ".xhtml")
-  meta = GetResourceMeta(res_path)
+  meta = ReadResourceMeta(res_path)
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
   article_title = meta[0]
   cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   if CHECK_NONCE:
-    comments = GetComments(cmt_path)
+    comments = ReadComments(cmt_path)
     nonce = CalculateNonce(p_resource, comments)
     if p_nonce != nonce:
       PrintError(409, "Conflict", "nonce doesn't match")
@@ -351,6 +362,36 @@ def DoPostComment(resource_dir, comment_dir, params, remote_addr):
   print("Content-Type: text/plain; charset=UTF-8")
   print()
   print("Updated: " + p_resource)
+
+
+def ReadHistory(path, num_max):
+  comments = []
+  try:
+    fd = os.open(path, os.O_RDONLY)
+    fcntl.flock(fd, fcntl.LOCK_SH)
+    input_file = os.fdopen(fd, "r")
+    for line in input_file:
+      fields = line.strip().split("\t")
+      if len(fields) != 6: continue
+      del fields[3]
+      comments.append(fields)
+    input_file.close()
+  except:
+    pass
+  comments.reverse()
+  if num_max > 0 and len(comments) > num_max:
+    comments = comments[:num_max]
+  return comments
+
+
+def DoListHistory(comment_dir, params):
+  p_max = TextToInt(params.get("max") or "0")
+  hist_path = os.path.join(comment_dir, HISTORY_FILE)
+  comments = ReadHistory(hist_path, p_max)
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  for comment in comments:
+    print("\t".join(comment))
 
 
 if __name__=="__main__":

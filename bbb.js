@@ -3,6 +3,7 @@
 function main() {
   adjust_images();
   check_comments();
+  render_comment_history();
 }
 
 function adjust_images() {
@@ -81,12 +82,11 @@ function render_comments() {
       const comments = [];
       for (const line of xhr.responseText.split("\n")) {
         const fields = line.split("\t");
-        if (fields.length != 4) continue;
+        if (fields.length != 3) continue;
         const comment = {}
         comment.date = fields[0];
-        comment.addr = fields[1];
-        comment.author = fields[2];
-        comment.text = unescape_text(fields[3]);
+        comment.author = fields[1];
+        comment.text = unescape_text(fields[2]);
         comments.push(comment);
       }
       update_comment_list(comments)
@@ -247,6 +247,82 @@ function save_user_name(name) {
 function load_user_name() {
   if (!localStorage) return null;
   return localStorage.getItem("user_name");
+}
+
+function render_comment_history() {
+  for (const area of document.getElementsByClassName("comment_history_area")) {
+    const comment_url = area.dataset.commentUrl;
+    const max = area.dataset.commentMax;
+    const request_url = comment_url + "?action=list-history&max=" + max;
+    const xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      if (xhr.status == 200) {
+        const comments = [];
+        for (const line of xhr.responseText.split("\n")) {
+          const fields = line.split("\t");
+          if (fields.length != 5) continue;
+          const comment = {}
+          comment.date = fields[0];
+          comment.resource = fields[1];
+          comment.title = fields[2];
+          comment.author = fields[3];
+          comment.text = fields[4];
+          comments.push(comment);
+        }
+        update_comment_history(area, comments);
+      }
+    };
+    xhr.onerror = function() {
+      alert('networking error while getting comment history')
+    };
+    xhr.open("GET", request_url, true);
+    xhr.send();
+  }
+}
+
+function update_comment_history(area, comments) {
+  area.innerHTML = "";
+  if (comments.length > 0) {
+    const history_list = document.createElement("ul");
+    for (const comment of comments) {
+      const history_item = document.createElement("li");
+      history_item.className = "history_item";
+      const history_author = document.createElement("span");
+      history_author.className = "history_author";
+      history_author.textContent = comment.author;
+      history_item.insertBefore(history_author, null);
+      history_item.insertBefore(
+        document.createTextNode(" commented "), null);
+      const history_text = document.createElement("span");
+      history_text.className = "history_text";
+      history_text.textContent = '"' + comment.text + '"';
+      history_item.insertBefore(history_text, null);
+      history_item.insertBefore(
+        document.createTextNode(" on "), null);
+      const history_resource = document.createElement("a");
+      history_resource.className = "history_resource";
+      if (comment.title == "") {
+        history_resource.textContent = comment.resource;
+      } else {
+        history_resource.textContent = '"' + comment.title + '"';
+      }
+      history_resource.href = "./" + comment.resource + ".xhtml";
+      history_item.insertBefore(history_resource, null);
+      history_item.insertBefore(
+        document.createTextNode(" at "), null);
+      const history_date = document.createElement("span");
+      history_date.className = "history_date";
+      history_date.textContent = comment.date;
+      history_item.insertBefore(history_date, null);
+      history_list.insertBefore(history_item, null);
+    }
+    area.insertBefore(history_list, null);
+  } else {
+    const history_message = document.createElement("div");
+    history_message.className = "history_message";
+    history_message.textContent = "(no comments yet)";
+    area.insertBefore(history_message, null);
+  }
 }
 
 // END OF FILE

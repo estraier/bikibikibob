@@ -474,6 +474,28 @@ div.comment_area span#comment_message {
     border-radius: 1ex;
 }
 
+/* comment history */
+div.comment_history_area {
+    font-size: 80%;
+    color: #555;
+}
+div.comment_history_area span.history_author {
+    font-size: 120%;
+    color: #000;
+}
+div.comment_history_area a.history_resource {
+    font-size: 120%;
+}
+div.comment_history_area span.history_date {
+    font-size: 90%;
+}
+div.comment_history_area div.history_message {
+    margin: 1ex 2ex;
+    padding: 0;
+    font-size: 90%;
+    color: #999;
+}
+
 /* for large screens */
 @media screen and (min-width:750px) {
   html {
