@@ -32,7 +32,7 @@ import urllib.parse
 
 HTML_DIR = "."
 COMMENT_DIR = "."
-HISTORY_FILE = "__history__.cmt"
+HISTORY_FILE = "__comment_history__.tsv"
 NONCE_SALT = "bbb"
 MAX_AUTHOR_LEN = 32
 MAX_TEXT_LEN = 3000
@@ -170,24 +170,21 @@ def WriteComment(path, date, addr, author, text):
   return True
 
 
-def WriteHistory(path, date, addr, author, text):
+def WriteHistory(path, date, resource, title, addr, author, text):
+  short_title = re.sub(r"\s+", " ", title).strip()
+  if len(short_title) > 64:
+    short_title = short_title[:64] + "..."
   short_text = re.sub(r"\s+", " ", text).strip()
   if len(short_text) > 64:
     short_text = short_text[:64] + "..."
-  esc_text = EscapeCommentText(short_text)
-  fields = [date, addr, author, esc_text]
+  fields = [date, resource, short_title, addr, author, short_text]
   serialized = "\t".join(fields) + "\n"
-  fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+  limit_file_size = MAX_HISTORY_FILE_SIZE * 1.2 + 256
+  fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o644)
   fcntl.flock(fd, fcntl.LOCK_EX)
   new_size = os.fstat(fd).st_size + len(serialized)
-  output_file = os.fdopen(fd, "a")
-  output_file.write(serialized)
-  output_file.close()
-  limit_file_size = MAX_HISTORY_FILE_SIZE * 1.2 + 256
+  output_file = os.fdopen(fd, "r+")
   if new_size > limit_file_size:
-    fd = os.open(path, os.O_RDWR)
-    fcntl.flock(fd, fcntl.LOCK_EX)
-    output_file = os.fdopen(fd, "r+")
     lines = []
     for line in output_file:
       lines.append(line.strip())
@@ -204,7 +201,10 @@ def WriteHistory(path, date, addr, author, text):
     output_file.truncate()
     for line in lines:
       output_file.write(line + "\n")
-    output_file.close()
+  else:
+    output_file.seek(0, 2)
+  output_file.write(serialized)
+  output_file.close()
   return True
 
 
@@ -332,6 +332,7 @@ def DoPostComment(resource_dir, comment_dir, params, remote_addr):
   if not meta:
     PrintError(403, "Forbidden", "not an article resource")
     return
+  article_title = meta[0]
   cmt_path = os.path.join(comment_dir, p_resource + ".cmt")
   if CHECK_NONCE:
     comments = GetComments(cmt_path)
@@ -344,7 +345,7 @@ def DoPostComment(resource_dir, comment_dir, params, remote_addr):
     PrintError(500, "Internal Server Error", "writing comment failed")
     return
   hist_path = os.path.join(comment_dir, HISTORY_FILE)
-  if not WriteHistory(hist_path, date, remote_addr, p_author, p_text):
+  if not WriteHistory(hist_path, date, p_resource, article_title, remote_addr, p_author, p_text):
     PrintError(500, "Internal Server Error", "writing history failed")
     return
   print("Content-Type: text/plain; charset=UTF-8")
