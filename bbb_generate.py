@@ -152,9 +152,7 @@ def ReadArticleMetadata(path):
       else:
         match = re.search(r"^(>+)\|([a-z]*)\|$", line)
         if match:
-          print(match)
           end_pre_line = "||" + ("<" * len(match.group(1)))
-          print(end_pre_line)
           continue
       match = re.search(r"^@title +([^\s].*)$", line)
       if match and not title:
