@@ -40,8 +40,7 @@ MAIN_HEADER_TEXT = """
 </head>
 <body onload="main();">
 <div class="site_title_area">
-<h1><a href="{site_url}">{site_title}</a></h1>
-<div class="subtitle">{site_subtitle}</div>
+<h1><a href="{site_url}">{site_title}</a></h1>{extra_site_title}
 </div>
 """
 MAIN_FOOTER_TEXT = """
@@ -134,6 +133,7 @@ def ReadConfig(conf_path):
   config["style_file"] = os.path.join(base_dir, config["style_file"])
   if not config["site_url"]: raise ValueError("empty site_url in the config")
   if not config["title"]: raise ValueError("empty title in the config")
+  if not config["language"]: raise ValueError("empty language in the config")
   return config
 
 
@@ -373,9 +373,15 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   title = NormalizeMetaText(article.get("title") or "")
   date = NormalizeMetaText(article.get("date") or "")
   misc = NormalizeMetaText(article.get("misc") or "")
-  page_title = config["title"]
+  site_title = config["title"]
+  site_subtitle = config.get("subtitle")
   if title:
-    page_title = page_title + ": " + title
+    page_title = site_title + ": " + title
+  else:
+    page_title = title
+  extra_site_title = ""
+  if site_subtitle:
+    extra_site_title = '\n<div class="subtitle">{}</div>'.format(esc(site_subtitle))
   extra_meta = []
   if title:
     extra_meta.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
@@ -397,7 +403,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     script_file=esc(os.path.basename(config["script_file"])),
     page_title=esc(page_title),
     site_title=esc(config["title"]),
-    site_subtitle=esc(config["subtitle"]),
+    extra_site_title=extra_site_title,
     site_url=esc(site_url))
   print(main_header.strip(), file=output_file)
   P('<article class="main">')
