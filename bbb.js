@@ -291,14 +291,12 @@ function update_comment_history(area, comments) {
       history_author.className = "history_author";
       history_author.textContent = comment.author;
       history_item.insertBefore(history_author, null);
-      history_item.insertBefore(
-        document.createTextNode(" commented "), null);
+      history_item.insertBefore(document.createTextNode(": "), null);
       const history_text = document.createElement("span");
       history_text.className = "history_text";
       history_text.textContent = '"' + comment.text + '"';
       history_item.insertBefore(history_text, null);
-      history_item.insertBefore(
-        document.createTextNode(" on "), null);
+      history_item.insertBefore(document.createTextNode(" - "), null);
       const history_resource = document.createElement("a");
       history_resource.className = "history_resource";
       if (comment.title == "") {
@@ -308,8 +306,7 @@ function update_comment_history(area, comments) {
       }
       history_resource.href = "./" + comment.resource + ".xhtml";
       history_item.insertBefore(history_resource, null);
-      history_item.insertBefore(
-        document.createTextNode(" at "), null);
+      history_item.insertBefore(document.createTextNode(" - "), null);
       const history_date = document.createElement("span");
       history_date.className = "history_date";
       history_date.textContent = comment.date;

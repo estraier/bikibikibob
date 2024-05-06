@@ -307,6 +307,23 @@ article.main iframe.youtube2 {
     width: 48%;
 }
 
+/* page-level table of contents */
+ul.page_toc_area {
+    margin: 0.8ex 0.5ex 0.8ex 5ex;
+    padding: 0;
+}
+ul.page_toc_area li.pagetoc1 {
+    margin-left: 0ex;
+}
+ul.page_toc_area li.pagetoc2 {
+    margin-left: 3ex;
+    font-size: 95%;
+}
+ul.page_toc_area li.pagetoc3 {
+    margin-left: 6ex;
+    font-size: 90%;
+}
+
 /* site-level table of contents */
 article.main div.site_toc_area {
     margin: 0.8ex 0;
@@ -479,18 +496,29 @@ div.comment_area span#comment_message {
 
 /* comment history */
 div.comment_history_area {
+    margin: 0.7ex 0.5ex;
+    padding: 0;
     font-size: 80%;
-    color: #555;
+    color: #333;
+    border: 1px dashed #aaa;
+    border-radius: 1ex;
+}
+div.comment_history_area ul {
+    margin: 0;
+}
+div.comment_history_area li {
+    margin: 0.2ex 1ex 0.2ex 3ex;
+    word-break: break-all;
 }
 div.comment_history_area span.history_author {
     font-size: 120%;
     color: #000;
 }
 div.comment_history_area a.history_resource {
-    font-size: 120%;
+    font-size: 100%;
 }
 div.comment_history_area span.history_date {
-    font-size: 90%;
+    font-size: 85%;
 }
 div.comment_history_area div.history_message {
     margin: 1ex 2ex;

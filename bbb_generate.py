@@ -93,18 +93,21 @@ def main(argv):
   articles = ReadInputDir(config, focus_names)
   if not articles:
     raise ValueError("no input files")
+  logger.info("Number of articles: {}".format(len(articles)))
   index = {}
   count_index = collections.defaultdict(int)
   for article in articles:
+    esc_name = "filename:" + re.sub(r"\.art$", "", article["name"])
+    index[esc_name] = article
     title = article.get("title")
-    if not title: continue
-    title = title.lower()
-    count = count_index[title] + 1
-    if count > 1:
-      title = title + " ({})".format(count)
-    if title not in index:
-      index[title] = article
-    count_index[title] = count
+    if title:
+      title = title.lower()
+      count = count_index[title] + 1
+      if count > 1:
+        title = title + " ({:d})".format(count)
+      if title not in index:
+        index[title] = article
+      count_index[title] = count
   MakeOutputDir(config)
   for article in articles:
     MakeArticle(config, articles, index, article)
@@ -163,10 +166,6 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@misc +(.*)$", line)
       if match and not misc:
         misc = match.group(1).strip()
-  if title and not date:
-    logger.warning("no date: {}".format(path))
-  if date and not title:
-    logger.warning("no title: {}".format(path))
   if (date and not re.fullmatch(r"\d{4}/\d{2}/\d{2}", date) and
       not re.fullmatch(r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", date)):
     logger.warning("invalid date format: {}: {}".format(path, date))
@@ -189,6 +188,7 @@ def ReadInputDir(config, focus_names):
       focus_stem_set.add(stem)
   articles = []
   for name in names:
+    if name.startswith("."): continue
     if not name.endswith(".art"): continue
     stem = re.sub(r"\.art$", "", name)
     if focus_stem_set and stem not in focus_stem_set: continue
@@ -284,7 +284,7 @@ def OrganizeSections(lines):
       sections.append(section)
       section_break = True
       continue
-    match = re.search(r"^@[-_a-z]+ ", line)
+    match = re.search(r"^@[-_a-z]+( |$)", line)
     if match:
       section = {
         "type": "meta",
@@ -430,7 +430,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         id_count = id_count_index[head_id]
         id_count += 1
         if id_count > 1:
-          head_id = head_id + "__{:d}".format(id_count)
+          head_id = head_id + "_{:d}".format(id_count)
         id_count_index[head_id] = id_count
         P('<{} id="{}">', elem, head_id, end="")
         P('{}', text, end="")
@@ -472,15 +472,17 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         P('{}', line)
       P('</pre>')
     if elem_type == "meta":
-      match = re.search("^@([-_a-z]+) +(.*)$", lines[0])
+      match = re.search("^@([-_a-z]+)(.*)$", lines[0])
       name = match.group(1)
-      params = match.group(2)
+      params = match.group(2).strip()
       if name == "image":
         PrintImage(P, params)
       elif name == "video":
         PrintVideo(P, params)
       elif name == "youtube":
         PrintYoutube(P, params)
+      elif name == "page-toc":
+        PrintPageToc(P, sections, params)
       elif name == "site-toc":
         PrintSiteToc(P, articles, params)
       elif name == "comment-history":
@@ -515,25 +517,27 @@ def PrintRichPhrase(P, index, text):
   else:
     face = text.strip()
     dest = text.strip()
+  dest_url = ""
   link_class = "internal"
   if re.search(r"^https?://", dest):
     dest_url = dest
     link_class = "external"
   else:
-    match = re.search(r"(^[^#]+)#(.+)$", dest)
+    match = re.search(r"(^[^#]*)#(.+)$", dest)
     if match:
       dest_title = match.group(1)
       dest_fragment = match.group(2)
     else:
       dest_title = dest
       dest_fragment = ""
-    dest_article = index.get(dest_title.lower())
-    if dest_article:
-      dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
-      if dest_fragment:
-        dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
-    else:
-      dest_url = ""
+    if dest_title:
+      dest_article = index.get(dest_title.lower())
+      if dest_article:
+        dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
+        if dest_fragment:
+          dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
+    elif dest_fragment:
+      dest_url = "#" + EscapeHeaderId(dest_fragment)
   if not dest_url:
     logger.warning("invalid hyperlink: {}: {}".format(face, dest))
     link_class = "dead"
@@ -655,6 +659,29 @@ def PrintYoutube(P, params):
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
+
+
+def PrintPageToc(P, sections, params):
+  P('<ul class="page_toc_area">')
+  id_count_index = collections.defaultdict(int)
+  for section in sections:
+    elem_type = section["type"]
+    lines = section["lines"]
+    if elem_type != 'h': continue
+    for line in lines:
+      match = re.search("^(\*+) +(.*)$", line)
+      level = min(len(match.group(1)), 3)
+      text = match.group(2)
+      head_id = EscapeHeaderId(text)
+      id_count = id_count_index[head_id]
+      id_count += 1
+      if id_count > 1:
+        head_id = head_id + "_{:d}".format(id_count)
+      id_count_index[head_id] = id_count
+      P('<li class="pagetoc{}">', level, end="")
+      P('<a href="#{}">{}</a>', head_id, text, end="")
+      P('</li>')
+  P('</ul>')
 
 
 def PrintSiteToc(P, articles, params):
