@@ -781,6 +781,8 @@ def CutTextByWidth(text, width):
 
 
 def PrintStepLinks(config, P, articles, article):
+  misc = ParseMisc(article.get("misc") or "")
+  if "notoc" in misc: return
   step_order = config.get("step_order")
   name = article["name"]
   title = article.get("title") or ""
@@ -801,6 +803,8 @@ def PrintStepLinks(config, P, articles, article):
   next_expr = None
   for sibling in articles:
     if sibling == article: continue
+    sibl_misc = ParseMisc(sibling.get("misc") or "")
+    if "notoc" in sibl_misc: continue
     sibl_name = sibling["name"]
     sibl_title = sibling.get("title") or ""
     sibl_date = sibling.get("date") or ""
