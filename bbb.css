@@ -129,6 +129,10 @@ article.main td {
     word-break: break-all;
     border: solid 1px #888;
 }
+article.main td.num {
+    text-align: right;
+    font-family: monospace;
+}
 article.main a {
     color: #02b;
     text-decoration: none;

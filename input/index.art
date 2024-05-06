@@ -1,9 +1,9 @@
-@misc noshare, nocomment
+@misc noshare, nocomment, notoc
 
 * New Articles
 
-@index [order=date] [reverse=true] [max=10]
+@site-toc [order=date] [reverse=true] [max=10]
 
 * About This site
 
-This is a sample site made by BikiBikiBob.
+This is a sample site made by [[BikiBikiBob|https://dbmx.net/bikibikibob/]].

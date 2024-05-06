@@ -454,7 +454,17 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         fields = line.split("|")
         for field in fields:
           field = re.sub(r"{{_VERT_}}", "|", field)
-          P('<td>', end="")
+          colspan = 1
+          match = re.search(r"^<(\d+)>(.*)", field)
+          if match:
+            field = match.group(2)
+            colspan = max(1, int(match.group(1)))
+          class_name = "str"
+          match = re.search(r"^#(.*)", field)
+          if match:
+            field = match.group(1)
+            class_name = "num"
+          P('<td colspan="{}" class="{}">', colspan, class_name, end="")
           PrintText(P, index, field)
           P('</td>', end="")
         P('</tr>')
