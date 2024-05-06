@@ -17,7 +17,11 @@ body {
 
 /* site title */
 div.site_title_area {
-    margin: 0.5ex 0 1.2ex 0;
+    margin: 1ex 0 1.5ex 0;
+}
+div.site_title_area_weak {
+    font-size: 80%;
+    opacity: 0.8;
 }
 div.site_title_area h1 {
     margin: 0;
@@ -46,7 +50,7 @@ article.main {
   margin: 0 0 3ex 0;
 }
 article.main div.page_title_area {
-    margin: 0.5ex 0 1.2ex 0;
+    margin: 1ex 0 1.2ex 0;
     padding: 0;
     border-bottom: 1px dashed #aaa;
 }

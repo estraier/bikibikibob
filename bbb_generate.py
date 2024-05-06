@@ -39,7 +39,7 @@ MAIN_HEADER_TEXT = """
 <script type="text/javascript" src="{script_file}"></script>
 </head>
 <body onload="main();">
-<div class="site_title_area">
+<div class="site_title_area {site_title_subclass}">
 <h1><a href="{site_url}">{site_title}</a></h1>{extra_site_title}
 </div>
 """
@@ -377,8 +377,10 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   site_subtitle = config.get("subtitle")
   if title:
     page_title = site_title + ": " + title
+    site_title_subclass = "site_title_area_weak"
   else:
     page_title = title
+    site_title_subclass = "site_title_area_strong"
   extra_site_title = ""
   if site_subtitle:
     extra_site_title = '\n<div class="subtitle">{}</div>'.format(esc(site_subtitle))
@@ -403,6 +405,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     script_file=esc(os.path.basename(config["script_file"])),
     page_title=esc(page_title),
     site_title=esc(config["title"]),
+    site_title_subclass=esc(site_title_subclass),
     extra_site_title=extra_site_title,
     site_url=esc(site_url))
   print(main_header.strip(), file=output_file)
@@ -533,6 +536,18 @@ def PrintRichPhrase(P, index, text):
   link_class = "internal"
   if re.search(r"^https?://", dest):
     dest_url = dest
+    link_class = "external"
+  elif dest.startswith("enwiki:"):
+    dest = dest[7:].strip()
+    if not dest and face:
+      dest = face
+    dest_url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(dest)
+    link_class = "external"
+  elif dest.startswith("jawiki:"):
+    dest = dest[7:].strip()
+    if not dest and face:
+      dest = face
+    dest_url = "https://ja.wikipedia.org/wiki/" + urllib.parse.quote(dest)
     link_class = "external"
   else:
     match = re.search(r"(^[^#]*)#(.+)$", dest)
