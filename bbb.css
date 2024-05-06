@@ -311,6 +311,45 @@ article.main iframe.youtube2 {
     width: 48%;
 }
 
+/* maps */
+article.main div.maps_area {
+    margin: 0.8ex 0;
+    padding: 0;
+    width: 100%;
+    text-align: center;
+}
+article.main span.maps_cell {
+    position: relative;
+    margin: 0;
+    padding: 0;
+}
+article.main span.maps_caption {
+    position: absolute;
+    bottom: 8px;
+    right: 4px;
+    z-index: 1;
+    min-width: 5ex;
+    padding: 0.1ex 0.3ex;
+    background: #000;
+    border-radius: 0.3ex;
+    font-size: 80%;
+    color: #fff;
+    opacity: 0.7;
+}
+article.main span.maps_caption2 {
+    font-size: 75%;
+}
+article.main span.maps_cell:hover span.maps_caption {
+    opacity: 0.2;
+    z-index: -1;
+}
+article.main iframe.maps1 {
+    width: 90%;
+}
+article.main iframe.maps2 {
+    width: 48%;
+}
+
 /* page-level table of contents */
 ul.page_toc_area {
     margin: 0.8ex 0.5ex 0.8ex 5ex;
@@ -582,7 +621,15 @@ div.comment_history_area div.history_message {
   }
   article.main iframe.youtube2 {
       width: 315px;
-      height: 200px
+      height: 200px;
+  }
+  article.main iframe.maps1 {
+      width: 500px;
+      height: 400px;
+  }
+  article.main iframe.maps2 {
+      width: 300px;
+      height: 240px;
   }
 }
 
@@ -608,7 +655,7 @@ div.comment_history_area div.history_message {
     }
     div.step_link_area span.step_title {
         font-size: 50%;
-   }
+    }
     div.comment_area table {
         margin: 0.5ex 0.8ex;
         width: 90%;

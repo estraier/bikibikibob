@@ -491,6 +491,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintVideo(P, params)
       elif name == "youtube":
         PrintYoutube(P, params)
+      elif name == "maps":
+        PrintMaps(P, params)
       elif name == "page-toc":
         PrintPageToc(P, sections, params)
       elif name == "site-toc":
@@ -593,7 +595,6 @@ def PrintImage(P, params):
   P('<div class="image_area">')
   columns = params.split("|")
   for column in columns:
-    column = column.strip()
     attrs = ParseMetaParams(column)
     url = attrs[""]
     caption = attrs.get("caption")
@@ -619,7 +620,6 @@ def PrintVideo(P, params):
   P('<div class="video_area">')
   columns = params.split("|")
   for column in columns:
-    column = column.strip()
     attrs = ParseMetaParams(column)
     url = attrs[""]
     caption = attrs.get("caption")
@@ -644,7 +644,6 @@ def PrintYoutube(P, params):
   P('<div class="youtube_area">')
   columns = params.split("|")
   for column in columns:
-    column = column.strip()
     attrs = ParseMetaParams(column)
     url = attrs[""]
     caption = attrs.get("caption")
@@ -666,6 +665,34 @@ def PrintYoutube(P, params):
       video_id = re.sub(r"[^_a-zA-Z0-9]", "", url)[:16]
     url = "https://www.youtube-nocookie.com/embed/" + video_id
     P('<iframe src="{}" frameborder="0" class="youtube{}" style="{}"></iframe>',
+      url, len(columns), ";".join(styles), end="")
+    P('</span>')
+  P('</div>')
+
+
+def PrintMaps(P, params):
+  P('<div class="maps_area">')
+  columns = params.split("|")
+  for column in columns:
+    attrs = ParseMetaParams(column)
+    query = attrs[""]
+    zoom = attrs.get("zoom")
+    caption = attrs.get("caption")
+    width = attrs.get("width")
+    styles = []
+    if width:
+      num_width = re.sub(r"[^0-9]", "", width)
+      if num_width:
+        styles.append("width: {}%".format(num_width))
+    P('<span class="maps_cell">', end="")
+    if caption:
+      P('<span class="maps_caption maps_caption{}">{}</span>',
+        len(columns), caption, end="")
+    url = "https://maps.google.co.jp/maps?q=" + urllib.parse.quote(query)
+    if zoom:
+      url += "&z=" + zoom
+    url += "&output=embed"
+    P('<iframe src="{}" frameborder="0" class="maps{}" style="{}"></iframe>',
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
