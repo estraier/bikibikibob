@@ -307,9 +307,12 @@ article.main iframe.youtube2 {
     width: 48%;
 }
 
-/* indices */
-article.main div.index_area {
+/* site-level table of contents */
+article.main div.site_toc_area {
     margin: 0.8ex 0;
+}
+article.main div.site_toc_area li {
+    font-size: 95%;
 }
 
 /* share buttons */

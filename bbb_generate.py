@@ -481,8 +481,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintVideo(P, params)
       elif name == "youtube":
         PrintYoutube(P, params)
-      elif name == "index":
-        PrintIndex(P, articles, params)
+      elif name == "site-toc":
+        PrintSiteToc(P, articles, params)
       elif name == "comment-history":
         PrintCommentHistory(config, P, params)
       elif name not in ["title", "date", "misc"]:
@@ -571,6 +571,10 @@ def ParseMetaParams(params):
   return attrs
 
 
+def ParseMisc(misc):
+  return [x.strip() for x in misc.split(",") if x.strip()]
+
+
 def PrintImage(P, params):
   P('<div class="image_area">')
   columns = params.split("|")
@@ -653,12 +657,13 @@ def PrintYoutube(P, params):
   P('</div>')
 
 
-def PrintIndex(P, articles, params):
-  P('<div class="index_area">')
+def PrintSiteToc(P, articles, params):
+  P('<div class="site_toc_area">')
   attrs = ParseMetaParams(params)
   order = attrs.get("order")
   reverse = ToBool(attrs.get("reverse"))
   max_num = int(attrs.get("max") or 0)
+  articles = [x for x in articles if "notoc" not in ParseMisc(x.get("misc") or "")]
   if not order or order == "filename":
     articles = sorted(articles, key=lambda x: x["path"], reverse=reverse)
   elif order == "date":
@@ -695,7 +700,7 @@ def PrintCommentHistory(config, P, params):
 
 
 def PrintShareButtons(config, output_file, P, article):
-  misc = [x.strip() for x in (article.get("misc") or "").split(",")]
+  misc = ParseMisc(article.get("misc") or "")
   if "noshare" in misc: return
   button_names = config.get("share_button")
   if not button_names: return
@@ -815,7 +820,7 @@ def PrintStepLinks(config, P, articles, article):
 
 
 def PrintComments(config, P, article):
-  misc = [x.strip() for x in (article.get("misc") or "").split(",")]
+  misc = ParseMisc(article.get("misc") or "")
   if "nocomment" in misc: return
   comment_url = config.get("comment_url") or ""
   if not comment_url: return
