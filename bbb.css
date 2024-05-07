@@ -106,6 +106,7 @@ article.main pre {
     font-size: 85%;
     font-family: monospace;
     background: #f8f8f8;
+    border: solid 1px #eee;
     border-radius: 0.3ex;
 }
 article.main ul {
@@ -142,29 +143,37 @@ article.main td.head {
 }
 article.main p.lv1 {
     margin-left: 4ex;
+    padding: 0 0.3ex;
     text-indent: 0;
     font-size: 95%;
     color: #111;
 }
 article.main p.lv2 {
     margin-left: 4ex;
+    padding: 0 0.3ex;
     text-indent: 0;
     color: #111;
     font-size: 95%;
-    background: #eee;
+    background: #f8f8f8;
+    border: solid 1px #eee;
+    border-radius: 0.3ex;
 }
 article.main p.lv3 {
     margin-left: 8ex;
+    padding: 0 0.3ex;
     text-indent: 0;
     font-size: 90%;
     color: #222;
 }
 article.main p.lv4 {
     margin-left: 8ex;
+    padding: 0 0.3ex;
     text-indent: 0;
     color: #222;
     font-size: 90%;
-    background: #eee;
+    background: #f8f8f8;
+    border: solid 1px #eee;
+    border-radius: 0.3ex;
 }
 article.main a {
     color: #02b;
