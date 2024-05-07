@@ -628,7 +628,12 @@ def ParseMetaParams(params):
 
 
 def ParseMisc(misc):
-  return [x.strip() for x in misc.split(",") if x.strip()]
+  tags = []
+  for tag in misc.split(","):
+    tag = re.sub(r"\s+", " ", tag).strip()
+    if not tag or tag in tags: continue
+    tags.append(tag)
+  return tags
 
 
 def PrintImage(P, params):

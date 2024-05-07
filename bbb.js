@@ -46,7 +46,6 @@ function search_tags(tag_elem) {
             resource.title = fields[1];
             resource.date = fields[2];
             resource.is_self = resource.name == self_resource;
-            console.log(resource);
             resources.push(resource);
           }
         }
