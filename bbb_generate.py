@@ -572,7 +572,7 @@ def PrintRichPhrase(P, index, text):
   if match:
     P('<s>{}</s>', match.group(1), end="")
     return
-  match = re.fullmatch(r"::{(.*)}::", text)
+  match = re.fullmatch(r"::#(.*)#::", text)
   if match:
     P('<kbd>{}</kbd>', match.group(1), end="")
     return
@@ -639,7 +639,7 @@ def PrintText(P, index, text):
   text = re.sub(r"\[/(.*?)/\]", r"[[::/\1/::]]", text)
   text = re.sub(r"\[_(.*?)_\]", r"[[::_\1_::]]", text)
   text = re.sub(r"\[-(.*?)-\]", r"[[::-\1-::]]", text)
-  text = re.sub(r"\[{(.*?)}\]", r"[[::{\1}::]]", text)
+  text = re.sub(r"\[#(.*?)#\]", r"[[::#\1#::]]", text)
   text = re.sub(r"\[\^(.*?)\^\]", r"[[::^\1^::]]", text)
   text = re.sub(r"\[~(.*?)~\]", r"[[::~\1~::]]", text)
   text = re.sub(r"\[\((#?[0-9a-z]+)\):(.*?)\]", r"[[::(\1):\2::]]", text)
