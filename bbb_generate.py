@@ -520,13 +520,15 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintYoutube(P, params)
       elif name == "maps":
         PrintMaps(P, params)
+      elif name == "site-tags":
+        PrintSiteTags(P, articles, params)
       elif name == "page-toc":
         PrintPageToc(P, sections, params)
       elif name == "site-toc":
         PrintSiteToc(P, articles, params)
       elif name == "comment-history":
         PrintCommentHistory(config, P, params)
-      elif name not in ["title", "date", "misc"]:
+      elif name not in ["title", "date", "tag", "misc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
@@ -741,6 +743,29 @@ def PrintMaps(P, params):
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
+
+
+def PrintSiteTags(P, articles, params):
+  tag_index = collections.defaultdict(list)
+  for article in articles:
+    tags = ParseMisc(article.get("tag") or "")
+    for tag in tags:
+      tag_index[tag].append(article)
+  sorted_tags = sorted(tag_index.items(), key=lambda x: (-len(x[1]), x[0]))
+  P('<dl class="site_tags_area">')
+  for tag, tag_articles in sorted_tags:
+    P('<dt class="site_tags_name">{} <span class="site_tags_count">({:d})</span></dt>',
+      tag, len(tag_articles))
+    P('<dd class="site_tags_resources">')
+    for i, article in enumerate(tag_articles):
+      if i > 0:
+        P(', ')
+      name = article["name"]
+      title = article.get("title") or article["stem"]
+      url = "./" + GetOutputFilename(name)
+      P('<a href="{}" class="site_tags_link">{}</a>', url, title)
+    P('</dd>')
+  P('</dl>')
 
 
 def PrintPageToc(P, sections, params):

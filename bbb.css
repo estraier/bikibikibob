@@ -354,6 +354,27 @@ article.main iframe.maps2 {
     width: 48%;
 }
 
+/* site-level tags */
+dl.site_tags_area {
+    margin: 0.8ex 0.5ex 0.8ex 0ex;
+    padding: 0;
+}
+dl.site_tags_area dt.site_tags_name {
+    display: list-item;
+    margin-left: 3ex;
+    list-style-type: disc;
+}
+dl.site_tags_area span.site_tags_count {
+    color: #555;
+    font-size: 90%;
+}
+dl.site_tags_area dd.site_tags_resources {
+    display: list-item;
+    margin-left: 4ex;
+    list-style-type: none;
+    font-size: 95%;
+}
+
 /* page-level table of contents */
 ul.page_toc_area {
     margin: 0.8ex 0.5ex 0.8ex 5ex;
