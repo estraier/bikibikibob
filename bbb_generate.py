@@ -476,7 +476,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         level = min(len(match.group(1)), 3)
         text = match.group(2)
         P('<li class="l{:d}">', level, end="")
-        PrintText(P, index, text)
+        PrintText(P, index, text.strip())
         P('</li>')
       P('</ul>')
     if elem_type == "table":
@@ -508,14 +508,14 @@ def PrintArticle(config, articles, index, article, sections, output_file):
             field = match.group(1)
             class_name += " head"
           P('<td colspan="{}" rowspan="{}" class="{}">', colspan, rowspan, class_name, end="")
-          PrintText(P, index, field)
+          PrintText(P, index, field.strip())
           P('</td>', end="")
         P('</tr>')
       P('</table>')
     if elem_type == "p":
       P('<p class="lv{:d}">', level, end="")
       for i, line in enumerate(lines):
-        PrintText(P, index, line)
+        PrintText(P, index, line.strip())
         if i < len(lines) - 1:
           P('<br/>')
       P('</p>')
@@ -556,35 +556,35 @@ def PrintArticle(config, articles, index, article, sections, output_file):
 
 def PrintRichPhrase(P, index, text):
   text = re.sub(r"^\[(.*)\]$", "\1", text)
-  match = re.fullmatch(r"\*(.*)\*", text)
+  match = re.fullmatch(r"::\*(.*)\*::", text)
   if match:
     P('<b>{}</b>', match.group(1), end="")
     return
-  match = re.fullmatch(r"/(.*)/", text)
+  match = re.fullmatch(r"::/(.*)/::", text)
   if match:
     P('<i>{}</i>', match.group(1), end="")
     return
-  match = re.fullmatch(r"_(.*)_", text)
+  match = re.fullmatch(r"::_(.*)_::", text)
   if match:
     P('<u>{}</u>', match.group(1), end="")
     return
-  match = re.fullmatch(r"-(.*)-", text)
+  match = re.fullmatch(r"::-(.*)-::", text)
   if match:
     P('<s>{}</s>', match.group(1), end="")
     return
-  match = re.fullmatch(r"{(.*)}", text)
+  match = re.fullmatch(r"::{(.*)}::", text)
   if match:
     P('<kbd>{}</kbd>', match.group(1), end="")
     return
-  match = re.fullmatch(r"\^(.*)\^", text)
+  match = re.fullmatch(r"::\^(.*)\^::", text)
   if match:
     P('<sup>{}</sup>', match.group(1), end="")
     return
-  match = re.fullmatch(r"~(.*)~", text)
+  match = re.fullmatch(r"::~(.*)~::", text)
   if match:
     P('<sub>{}</sub>', match.group(1), end="")
     return
-  match = re.fullmatch(r"\((#?[0-9a-z]+)\):(.*)", text)
+  match = re.fullmatch(r"::\((#?[0-9a-z]+)\):(.*)::", text)
   if match:
     P('<span style="color:{};">{}</span>', match.group(1), match.group(2), end="")
     return
@@ -635,15 +635,14 @@ def PrintRichPhrase(P, index, text):
 
 
 def PrintText(P, index, text):
-  text = text.strip()
-  text = re.sub(r"\[\*(.*?)\*\]", r"[[*\1*]]", text)
-  text = re.sub(r"\[/(.*?)/\]", r"[[/\1/]]", text)
-  text = re.sub(r"\[_(.*?)_\]", r"[[_\1_]]", text)
-  text = re.sub(r"\[-(.*?)-\]", r"[[-\1-]]", text)
-  text = re.sub(r"\[{(.*?)}\]", r"[[{\1}]]", text)
-  text = re.sub(r"\[\^(.*?)\^\]", r"[[^\1^]]", text)
-  text = re.sub(r"\[~(.*?)~\]", r"[[~\1~]]", text)
-  text = re.sub(r"\[\((#?[0-9a-z]+)\):(.*?)\]", r"[[(\1):\2]]", text)
+  text = re.sub(r"\[\*(.*?)\*\]", r"[[::*\1*::]]", text)
+  text = re.sub(r"\[/(.*?)/\]", r"[[::/\1/::]]", text)
+  text = re.sub(r"\[_(.*?)_\]", r"[[::_\1_::]]", text)
+  text = re.sub(r"\[-(.*?)-\]", r"[[::-\1-::]]", text)
+  text = re.sub(r"\[{(.*?)}\]", r"[[::{\1}::]]", text)
+  text = re.sub(r"\[\^(.*?)\^\]", r"[[::^\1^::]]", text)
+  text = re.sub(r"\[~(.*?)~\]", r"[[::~\1~::]]", text)
+  text = re.sub(r"\[\((#?[0-9a-z]+)\):(.*?)\]", r"[[::(\1):\2::]]", text)
   while True:
     match = re.search(r"(.*?)\[\[(.*?)\]\](.*)", text)
     if match:
