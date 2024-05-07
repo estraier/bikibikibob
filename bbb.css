@@ -137,6 +137,9 @@ article.main td.num {
     text-align: right;
     font-family: monospace;
 }
+article.main td.head {
+    background: #eee;
+}
 article.main p.lv1 {
     margin-left: 4ex;
     text-indent: 0;

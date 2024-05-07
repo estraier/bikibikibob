@@ -503,6 +503,10 @@ def PrintArticle(config, articles, index, article, sections, output_file):
           if match:
             field = match.group(1)
             class_name = "num"
+          match = re.search(r"^\^(.*)", field)
+          if match:
+            field = match.group(1)
+            class_name += " head"
           P('<td colspan="{}" rowspan="{}" class="{}">', colspan, rowspan, class_name, end="")
           PrintText(P, index, field)
           P('</td>', end="")
@@ -572,6 +576,18 @@ def PrintRichPhrase(P, index, text):
   if match:
     P('<kbd>{}</kbd>', match.group(1), end="")
     return
+  match = re.fullmatch(r"\^(.*)\^", text)
+  if match:
+    P('<sup>{}</sup>', match.group(1), end="")
+    return
+  match = re.fullmatch(r"~(.*)~", text)
+  if match:
+    P('<sub>{}</sub>', match.group(1), end="")
+    return
+  match = re.fullmatch(r"\((#?[0-9a-z]+)\):(.*)", text)
+  if match:
+    P('<span style="color:{};">{}</span>', match.group(1), match.group(2), end="")
+    return
   match = re.fullmatch(r"(.*?)\|(.*)", text)
   if match:
     face = match.group(1).strip()
@@ -625,6 +641,9 @@ def PrintText(P, index, text):
   text = re.sub(r"\[_(.*?)_\]", r"[[_\1_]]", text)
   text = re.sub(r"\[-(.*?)-\]", r"[[-\1-]]", text)
   text = re.sub(r"\[{(.*?)}\]", r"[[{\1}]]", text)
+  text = re.sub(r"\[\^(.*?)\^\]", r"[[^\1^]]", text)
+  text = re.sub(r"\[~(.*?)~\]", r"[[~\1~]]", text)
+  text = re.sub(r"\[\((#?[0-9a-z]+)\):(.*?)\]", r"[[(\1):\2]]", text)
   while True:
     match = re.search(r"(.*?)\[\[(.*?)\]\](.*)", text)
     if match:
