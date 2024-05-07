@@ -20,6 +20,66 @@ function adjust_images() {
   }
 }
 
+function search_tags(tag_elem) {
+  const result_pane = document.getElementById("tags_result");
+  const self_resource = result_pane.dataset.resource;
+  const tag = tag_elem.textContent;
+  if (result_pane.last_tag == tag) {
+    result_pane.style.display = "none";
+    result_pane.innerHTML = "";
+    result_pane.last_tag = null;
+    return;
+  }
+  const index_url =
+        document.location.toString().replace(/\/[^\/]+$/, "/") + "__toc__.tsv";
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      const resources = [];
+      for (const line of xhr.responseText.split("\n")) {
+        const fields = line.split("\t");
+        if (fields.length < 3) continue;
+        for (let i = 3; i < fields.length; i++) {
+          if (fields[i] == tag) {
+            const resource = {};
+            resource.name = fields[0];
+            resource.title = fields[1];
+            resource.date = fields[2];
+            resource.is_self = resource.name == self_resource;
+            console.log(resource);
+            resources.push(resource);
+          }
+        }
+        result_pane.last_tag = tag;
+        update_tag_result(result_pane, resources);
+      }
+    }
+  };
+  xhr.onerror = function() {
+    alert('networking error while getting tag index');
+  };
+  xhr.open("GET", index_url, true);
+  xhr.send();
+}
+
+function update_tag_result(result_pane, resources) {
+  result_pane.style.display = "block";
+  result_pane.innerHTML = "";
+  for (const resource of resources) {
+    const tag_result_item = document.createElement("a");
+    tag_result_item.className = "tags_result_item";
+    tag_result_item.textContent = resource.title.length > 0 ?
+      resource.title : resource.name;
+    tag_result_item.href = "./" + encodeURI(resource.name) + ".xhtml";
+    if (resource.is_self) {
+      tag_result_item.classList.add("tags_result_item_self");
+    } else {
+      tag_result_item.classList.add("tags_result_item_other");
+    }
+    result_pane.insertBefore(tag_result_item, null);
+  }
+}
+
 function unescape_text(text) {
   text = text.replaceAll("\\n", "\n");
   text = text.replaceAll("\\\\", "\\");
@@ -45,7 +105,7 @@ function check_comments() {
     }
   };
   xhr.onerror = function() {
-    alert('networking error while counting comments')
+    alert('networking error while counting comments');
   };
   xhr.open("GET", request_url, true);
   xhr.send();
@@ -94,7 +154,7 @@ function render_comments() {
     }
   };
   xhr.onerror = function() {
-    alert('networking error while getting comments')
+    alert('networking error while getting comments');
   };
   xhr.open("GET", request_url, true);
   xhr.send();
@@ -183,7 +243,7 @@ function post_comment() {
     }
   };
   xhr.onerror = function() {
-    alert('networking error while checking the nonce')
+    alert('networking error while checking the nonce');
   };
   xhr.open("GET", request_url, true);
   xhr.send();
@@ -216,7 +276,7 @@ function post_comment_second(comment_url, resource, author, text, nonce) {
     }
   }
   xhr.onerror = function() {
-    alert('networking error while posting the comment')
+    alert('networking error while posting the comment');
   }
   xhr.open("POST", comment_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -273,7 +333,7 @@ function render_comment_history() {
       }
     };
     xhr.onerror = function() {
-      alert('networking error while getting comment history')
+      alert('networking error while getting comment history');
     };
     xhr.open("GET", request_url, true);
     xhr.send();

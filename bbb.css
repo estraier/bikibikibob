@@ -398,6 +398,60 @@ div.share_button_area span.share_button:hover {
     opacity: 1.0;
 }
 
+/* tags */
+div.tags_area {
+    margin: 0.8ex 0;
+    padding: 0;
+    text-align: right;
+}
+div.tags_area span.tag {
+    display: inline-block;
+    max-width: 24ex;
+    padding: 0.5ex 1ex;
+    text-align: center;
+    font-size: 90%;
+    background: #eee;
+    border: 1px solid #ddd;
+    border-radius: 1ex;
+    cursor: pointer;
+    opacity: 0.6;
+}
+div.tags_area span.tag:hover {
+    opacity: 1.0;
+}
+div.tags_area div#tags_result {
+    display: none;
+    margin: 0.8ex 0;
+    padding: 0;
+}
+div.tags_area a.tags_result_item {
+    display: inline-block;
+    max-width: 24ex;
+    margin: 0 0.2ex;
+    padding: 0.5ex 1ex;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 85%;
+    color: #000;
+    text-decoration: none;
+    border-radius: 1ex;
+    cursor: pointer;
+    opacity: 0.6;
+}
+div.tags_area a.tags_result_item_self {
+    background: #eee;
+    border: 1px solid #ddd;
+}
+div.tags_area a.tags_result_item_other {
+    background: #def;
+    border: 1px solid #adf;
+}
+
+div.tags_area a.tags_result_item:hover {
+    opacity: 1.0;
+}
+
 /* page step links */
 div.step_link_area {
     margin: 0.8ex 0;
@@ -412,7 +466,7 @@ div.step_link_area a.step_button {
     padding: 0.5ex 0;
     text-align: center;
     line-height: 0.8;
-    white-space: no-wrap;
+    white-space: nowrap;
     overflow: hidden;
     background: #def;
     border: 1px solid #adf;
@@ -436,7 +490,7 @@ div.comment_area {
     width: 100%;
 }
 div.comment_area span#comment_banner {
-    display: inline-box;
+    display: inline-block;
     padding: 0.5ex 2ex;
     text-align: center;
     background: #eee;
@@ -458,7 +512,6 @@ div.comment_area span.comment_count {
     font-size: 80%;
     color: #333;
 }
-
 div.comment_area span#comment_banner:hover {
     opacity: 1.0;
 }

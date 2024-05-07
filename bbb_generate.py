@@ -111,6 +111,7 @@ def main(argv):
   MakeOutputDir(config)
   for article in articles:
     MakeArticle(config, articles, index, article)
+  MakeTagIndex(config, articles)
   logger.info("Process done: elapsed_time={:.2f}s".format(time.time() - start_time))
 
 
@@ -143,6 +144,7 @@ def ReadConfig(conf_path):
 def ReadArticleMetadata(path):
   title = ""
   date = ""
+  tag = ""
   misc = ""
   with open(path) as input_file:
     end_pre_line = ""
@@ -163,6 +165,9 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@date +([^\s].*)$", line)
       if match and not date:
         date = match.group(1).strip()
+      match = re.search(r"^@tag +([^\s].*)$", line)
+      if match and not tag:
+        tag = match.group(1).strip()
       match = re.search(r"^@misc +(.*)$", line)
       if match and not misc:
         misc = match.group(1).strip()
@@ -173,6 +178,7 @@ def ReadArticleMetadata(path):
     "path": path,
     "title": title,
     "date": date,
+    "tag": tag,
     "misc": misc,
   }
   return article
@@ -331,6 +337,24 @@ def EscapeHeaderId(expr):
 def ToBool(expr):
   if not expr: return False
   return expr.lower() in ["true", "yes", "1"]
+
+
+def CutTextByWidth(text, width):
+  new_text = ""
+  score = 0.0
+  for c in text:
+    cp = ord(c)
+    if cp < 0x0200:
+      score += 1.0
+    elif cp < 0x3000:
+      score += 1.5
+    else:
+      score += 2.0
+    if score > width:
+      new_text += "…"
+      break
+    new_text += c
+  return new_text
 
 
 def MakeArticle(config, articles, index, article):
@@ -506,6 +530,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
+  PrintTags(config, P, article)
   PrintStepLinks(config, P, articles, article)
   PrintComments(config, P, article)
   print(MAIN_FOOTER_TEXT.strip(), file=output_file)
@@ -814,22 +839,17 @@ def PrintShareButtons(config, output_file, P, article):
   P('</div>')
 
 
-def CutTextByWidth(text, width):
-  new_text = ""
-  score = 0.0
-  for c in text:
-    cp = ord(c)
-    if cp < 0x0200:
-      score += 1.0
-    elif cp < 0x3000:
-      score += 1.5
-    else:
-      score += 2.0
-    if score > width:
-      new_text += "…"
-      break
-    new_text += c
-  return new_text
+def PrintTags(config, P, article):
+  tags = ParseMisc(article.get("tag") or "")
+  if not tags: return
+  P('<div class="tags_area">')
+  P('<div class="tags_list">')
+  for tag in tags:
+    P('<span onclick="search_tags(this);" class="tag">{}</span>', tag)
+  P('</div>')
+  stem = article["stem"]
+  P('<div id="tags_result" data-resource="{}"></div>', stem)
+  P('</div>')
 
 
 def PrintStepLinks(config, P, articles, article):
@@ -936,6 +956,22 @@ def PrintComments(config, P, article):
   P('</table>')
   P('</form>')
   P('</div>')
+
+
+def MakeTagIndex(config, articles):
+  output_dir = config["output_dir"]
+  toc_path = os.path.join(output_dir, "__toc__.tsv")
+  with open(toc_path, "w") as output_file:
+    for article in articles:
+      stem = article["stem"]
+      short_title = (article.get("title") or "")
+      if len(short_title) > 64:
+        short_title = short_title[:64] + "..."
+      date = (article.get("date") or "")[:32]
+      tags = ParseMisc(article.get("tag") or "")
+      print("{}\t{}\t{}\t{}".format(
+        stem, short_title, date, "\t".join(tags)),
+            file=output_file)
 
 
 if __name__ == "__main__":
