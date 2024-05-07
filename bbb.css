@@ -137,6 +137,32 @@ article.main td.num {
     text-align: right;
     font-family: monospace;
 }
+article.main p.lv1 {
+    margin-left: 4ex;
+    text-indent: 0;
+    font-size: 95%;
+    color: #111;
+}
+article.main p.lv2 {
+    margin-left: 4ex;
+    text-indent: 0;
+    color: #111;
+    font-size: 95%;
+    background: #eee;
+}
+article.main p.lv3 {
+    margin-left: 8ex;
+    text-indent: 0;
+    font-size: 90%;
+    color: #222;
+}
+article.main p.lv4 {
+    margin-left: 8ex;
+    text-indent: 0;
+    color: #222;
+    font-size: 90%;
+    background: #eee;
+}
 article.main a {
     color: #02b;
     text-decoration: none;
@@ -442,8 +468,11 @@ div.tags_area span.tag:hover {
 }
 div.tags_area div#tags_result {
     display: none;
+    max-height: 50ex;
     margin: 0.8ex 0;
     padding: 0;
+    overflow: scroll;
+    text-align: center;
 }
 div.tags_area a.tags_result_item {
     display: inline-block;
@@ -453,7 +482,7 @@ div.tags_area a.tags_result_item {
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
-    font-size: 85%;
+    font-size: 80%;
     color: #000;
     text-decoration: none;
     border-radius: 1ex;
@@ -715,6 +744,18 @@ div.comment_history_area div.history_message {
 @media screen and (max-width:749px) {
     article.main p {
         text-indent: 1.2ex;
+    }
+    article.main p.lv1 {
+        margin-left: 2ex;
+    }
+    article.main p.lv2 {
+        margin-left: 2ex;
+    }
+    article.main p.lv3 {
+        margin-left: 4ex;
+    }
+    article.main p.lv4 {
+        margin-left: 4ex;
     }
     article.main img.emb_image1 {
         max-width: 90%;

@@ -312,10 +312,16 @@ def OrganizeSections(lines):
     if not section_break and sections and sections[-1]["type"] == "p":
       sections[-1]["lines"].append(line)
       continue
+    level = 0
+    match = re.search(r"^(>+) +(.*)$", line)
+    if match:
+      level = min(4, len(match.group(1)))
+      line = match.group(2)
     p_lines = [line]
     section = {
       "type": "p",
       "lines": p_lines,
+      "level": level,
     }
     sections.append(section)
     section_break = False
@@ -447,6 +453,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   for section in sections:
     elem_type = section["type"]
     lines = section["lines"]
+    level = int(section.get("level") or "0")
     if elem_type == "h":
       for line in lines:
         match = re.search("^(\*+) +(.*)$", line)
@@ -486,18 +493,23 @@ def PrintArticle(config, articles, index, article, sections, output_file):
           if match:
             field = match.group(2)
             colspan = max(1, int(match.group(1)))
+          rowspan = 1
+          match = re.search(r"^{(\d+)}(.*)", field)
+          if match:
+            field = match.group(2)
+            rowspan = max(1, int(match.group(1)))
           class_name = "str"
           match = re.search(r"^#(.*)", field)
           if match:
             field = match.group(1)
             class_name = "num"
-          P('<td colspan="{}" class="{}">', colspan, class_name, end="")
+          P('<td colspan="{}" rowspan="{}" class="{}">', colspan, rowspan, class_name, end="")
           PrintText(P, index, field)
           P('</td>', end="")
         P('</tr>')
       P('</table>')
     if elem_type == "p":
-      P('<p>', end="")
+      P('<p class="lv{:d}">', level, end="")
       for i, line in enumerate(lines):
         PrintText(P, index, line)
         if i < len(lines) - 1:
@@ -547,6 +559,14 @@ def PrintRichPhrase(P, index, text):
   match = re.fullmatch(r"/(.*)/", text)
   if match:
     P('<i>{}</i>', match.group(1), end="")
+    return
+  match = re.fullmatch(r"_(.*)_", text)
+  if match:
+    P('<u>{}</u>', match.group(1), end="")
+    return
+  match = re.fullmatch(r"-(.*)-", text)
+  if match:
+    P('<s>{}</s>', match.group(1), end="")
     return
   match = re.fullmatch(r"{(.*)}", text)
   if match:
@@ -602,6 +622,8 @@ def PrintText(P, index, text):
   text = text.strip()
   text = re.sub(r"\[\*(.*?)\*\]", r"[[*\1*]]", text)
   text = re.sub(r"\[/(.*?)/\]", r"[[/\1/]]", text)
+  text = re.sub(r"\[_(.*?)_\]", r"[[_\1_]]", text)
+  text = re.sub(r"\[-(.*?)-\]", r"[[-\1-]]", text)
   text = re.sub(r"\[{(.*?)}\]", r"[[{\1}]]", text)
   while True:
     match = re.search(r"(.*?)\[\[(.*?)\]\](.*)", text)
