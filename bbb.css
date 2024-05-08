@@ -189,15 +189,11 @@ article.main a:hover {
     color: #04f;
     text-decoration: underline;
 }
-article.main b {
-    color: #000;
-}
-article.main i {
-    color: #000;
+article.main span.colored a, article.main span.colored a.external {
+    color: inherit;
 }
 article.main kbd {
-    color: #000;
-    font-size: 90%;
+    font-size: 95%;
 }
 
 /* images */

@@ -476,7 +476,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         level = min(len(match.group(1)), 3)
         text = match.group(2)
         P('<li class="l{:d}">', level, end="")
-        PrintText(P, index, text.strip())
+        PrintText(P, index, text.strip(), 1)
         P('</li>')
       P('</ul>')
     if elem_type == "table":
@@ -508,14 +508,14 @@ def PrintArticle(config, articles, index, article, sections, output_file):
             field = match.group(1)
             class_name += " head"
           P('<td colspan="{}" rowspan="{}" class="{}">', colspan, rowspan, class_name, end="")
-          PrintText(P, index, field.strip())
+          PrintText(P, index, field.strip(), 1)
           P('</td>', end="")
         P('</tr>')
       P('</table>')
     if elem_type == "p":
       P('<p class="lv{:d}">', level, end="")
       for i, line in enumerate(lines):
-        PrintText(P, index, line.strip())
+        PrintText(P, index, line.strip(), 1)
         if i < len(lines) - 1:
           P('<br/>')
       P('</p>')
@@ -634,21 +634,146 @@ def PrintRichPhrase(P, index, text):
   P('<a href="{}" class="{}">{}</a>', dest_url, link_class, face, end="")
 
 
-def PrintText(P, index, text):
-  text = re.sub(r"\[\*(.*?)\*\]", r"[[::*\1*::]]", text)
-  text = re.sub(r"\[/(.*?)/\]", r"[[::/\1/::]]", text)
-  text = re.sub(r"\[_(.*?)_\]", r"[[::_\1_::]]", text)
-  text = re.sub(r"\[-(.*?)-\]", r"[[::-\1-::]]", text)
-  text = re.sub(r"\[#(.*?)#\]", r"[[::#\1#::]]", text)
-  text = re.sub(r"\[\^(.*?)\^\]", r"[[::^\1^::]]", text)
-  text = re.sub(r"\[~(.*?)~\]", r"[[::~\1~::]]", text)
-  text = re.sub(r"\[\((#?[0-9a-z]+)\):(.*?)\]", r"[[::(\1):\2::]]", text)
+def PrintText(P, index, text, depth):
+  if depth > 10:
+    P('{}', text, end="")
+    return
   while True:
-    match = re.search(r"(.*?)\[\[(.*?)\]\](.*)", text)
-    if match:
-      P('{}', match.group(1), end="")
-      PrintRichPhrase(P, index, match.group(2))
-      text = match.group(3)
+    idx = text.find("[")
+    if idx >= 0:
+      if idx > 0:
+        P('{}', text[:idx], end="")
+        text = text[idx:]
+      match = re.search("^\[\*(.*?)\*\]", text)
+      if match:
+        P('<b>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</b>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[/(.*?)/\]", text)
+      if match:
+        P('<i>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</i>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[_(.*?)_\]", text)
+      if match:
+        P('<u>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</u>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[-(.*?)-\]", text)
+      if match:
+        P('<s>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</s>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[#(.*?)#\]", text)
+      if match:
+        P('<kbd>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</kbd>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\^(.*?)\^\]", text)
+      if match:
+        P('<sup>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</sup>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[,(.*?),\]", text)
+      if match:
+        P('<sub>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</sub>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[:(.*?):\]", text)
+      if match:
+        P('<big>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</big>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\.(.*?)\.\]", text)
+      if match:
+        P('<small>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</small>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[{(#?[A-Za-z0-9]+):(.*?)}\]", text)
+      if match:
+        P('<span style="color:{};" class="colored">', match.group(1), end="")
+        PrintText(P, index, match.group(2), depth + 1)
+        P('</span>', end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\(([^:]+):(.*?)\)\]", text)
+      if match:
+        P('<ruby><rb>', end="")
+        PrintText(P, index, match.group(1), depth + 1)
+        P('</rb><rt>{}</rt></ruby>', match.group(2), end="")
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\[(.*?)\]\]", text)
+      if match:
+        content = match.group(1)
+        submatch = re.fullmatch(r"(.*?)\|(.*)", content)
+        if submatch:
+          face = submatch.group(1).strip()
+          dest = submatch.group(2).strip()
+        else:
+          face = content.strip()
+          dest = content.strip()
+        dest_url = ""
+        link_class = "internal"
+        if re.search(r"^https?://", dest):
+          dest_url = dest
+          link_class = "external"
+        elif dest.startswith("enwiki:"):
+          dest = dest[7:].strip()
+          if not dest and face:
+            dest = face
+          dest_url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(dest)
+          link_class = "external"
+        elif dest.startswith("jawiki:"):
+          dest = dest[7:].strip()
+          if not dest and face:
+            dest = face
+          dest_url = "https://ja.wikipedia.org/wiki/" + urllib.parse.quote(dest)
+          link_class = "external"
+        else:
+          submatch = re.search(r"(^[^#]*)#(.+)$", dest)
+          if submatch:
+            dest_title = submatch.group(1)
+            dest_fragment = submatch.group(2)
+          else:
+            dest_title = dest
+            dest_fragment = ""
+          if dest_title:
+            dest_article = index.get(dest_title.lower())
+            if dest_article:
+              dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
+              if dest_fragment:
+                dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
+          elif dest_fragment:
+            dest_url = "#" + EscapeHeaderId(dest_fragment)
+        if not dest_url:
+          logger.warning("invalid hyperlink: {}: {}".format(face, dest))
+          link_class = "dead"
+        P('<a href="{}" class="{}">', dest_url, link_class, end="")
+        PrintText(P, index, face, depth + 1)
+        P('</a>', end="")
+        text = text[match.end():]
+        continue
+      P('[', end="")
+      text = text[1:]
     else:
       P('{}', text, end="")
       break
