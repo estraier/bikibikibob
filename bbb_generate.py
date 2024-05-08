@@ -144,7 +144,7 @@ def ReadConfig(conf_path):
 def ReadArticleMetadata(path):
   title = ""
   date = ""
-  tag = ""
+  tags = ""
   misc = ""
   with open(path) as input_file:
     end_pre_line = ""
@@ -165,9 +165,9 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@date +([^\s].*)$", line)
       if match and not date:
         date = match.group(1).strip()
-      match = re.search(r"^@tag +([^\s].*)$", line)
-      if match and not tag:
-        tag = match.group(1).strip()
+      match = re.search(r"^@tags +([^\s].*)$", line)
+      if match and not tags:
+        tags = match.group(1).strip()
       match = re.search(r"^@misc +(.*)$", line)
       if match and not misc:
         misc = match.group(1).strip()
@@ -178,7 +178,7 @@ def ReadArticleMetadata(path):
     "path": path,
     "title": title,
     "date": date,
-    "tag": tag,
+    "tags": tags,
     "misc": misc,
   }
   return article
@@ -544,7 +544,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintSiteToc(P, articles, params)
       elif name == "comment-history":
         PrintCommentHistory(config, P, params)
-      elif name not in ["title", "date", "tag", "misc"]:
+      elif name not in ["title", "date", "tags", "misc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
@@ -913,7 +913,7 @@ def PrintMaps(P, params):
 def PrintSiteTags(P, articles, params):
   tag_index = collections.defaultdict(list)
   for article in articles:
-    tags = ParseMisc(article.get("tag") or "")
+    tags = ParseMisc(article.get("tags") or "")
     for tag in tags:
       tag_index[tag].append(article)
   sorted_tags = sorted(tag_index.items(), key=lambda x: (-len(x[1]), x[0]))
@@ -1035,7 +1035,7 @@ def PrintShareButtons(config, output_file, P, article):
 
 
 def PrintTags(config, P, article):
-  tags = ParseMisc(article.get("tag") or "")
+  tags = ParseMisc(article.get("tags") or "")
   if not tags: return
   P('<div class="tags_area">')
   P('<div class="tags_list">')
@@ -1163,7 +1163,7 @@ def MakeTagIndex(config, articles):
       if len(short_title) > 64:
         short_title = short_title[:64] + "..."
       date = (article.get("date") or "")[:32]
-      tags = ParseMisc(article.get("tag") or "")
+      tags = ParseMisc(article.get("tags") or "")
       print("{}\t{}\t{}\t{}".format(
         stem, short_title, date, "\t".join(tags)),
             file=output_file)

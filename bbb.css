@@ -77,18 +77,18 @@ article.main div.date {
 
 /* page content */
 article.main h3 {
-    margin: 1.5ex 0 1.2ex 0;
+    margin: 1.8ex 0 1.1ex 0;
     padding: 0;
     font-size: 105%;
     color: #000;
 }
 article.main h4 {
-    margin: 1.3ex 0 0.9ex 0;
+    margin: 1.4ex 0 0.8ex 0;
     padding: 0 1ex;
     font-size: 100%;
 }
 article.main h5 {
-    margin: 1.1ex 0 0.7ex 0;
+    margin: 1.2ex 0 0.7ex 0;
     padding: 0 2ex;
     font-size: 95%;
 }
@@ -103,7 +103,7 @@ article.main pre {
     line-height: 1.2;
     white-space: pre-wrap;
     word-break: break-all;
-    font-size: 85%;
+    font-size: 95%;
     font-family: monospace;
     background: #f8f8f8;
     border: solid 1px #eee;
