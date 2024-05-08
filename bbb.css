@@ -196,6 +196,61 @@ article.main kbd {
     font-size: 95%;
 }
 
+/* columns */
+article.main section.column {
+    display: none;
+    position: relative;
+    margin: 0.7ex 1.0ex;
+    padding: 0.5ex 0.7ex;
+    font-size: 95%;
+    border-radius: 0.3ex;
+}
+article.main section.column_overt {
+    background: #ffe;
+    border: solid 1px #ee9;
+}
+article.main section.column_covert {
+    background: #eff;
+    border: solid 1px #bef;
+}
+article.main div.column_close {
+    position: absolute;
+    top: 0.5ex;
+    right: 0.5ex;
+    padding: 0 0.5ex;
+    width: 1.5ex;
+    text-align: center;
+    font-size: 70%;
+    background: #ddd;
+    border: 1px solid #888;
+    border-radius: 0.2ex;
+    cursor: pointer;
+    opacity: 0.2;
+}
+article.main div.column_close:hover {
+    opacity: 0.8;
+}
+article.main div.column_caption {
+    text-align: center;
+    font-weight: bold;
+}
+article.main span.column_trigger {
+    display: inline-block;
+    margin: 0.5ex 1ex;
+    padding: 0.5ex 1ex;
+    text-align: center;
+    border-radius: 1ex;
+    cursor: pointer;
+}
+article.main span.column_overt_trigger {
+    background: #ffd;
+    border: solid 1px #ee8;
+}
+article.main span.column_covert_trigger {
+    background: #def;
+    border: solid 1px #adf;
+}
+
 /* images */
 article.main div.image_area {
     margin: 0.8ex 0;

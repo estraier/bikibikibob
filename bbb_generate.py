@@ -312,16 +312,10 @@ def OrganizeSections(lines):
     if not section_break and sections and sections[-1]["type"] == "p":
       sections[-1]["lines"].append(line)
       continue
-    level = 0
-    match = re.search(r"^(>+) +(.*)$", line)
-    if match:
-      level = min(4, len(match.group(1)))
-      line = match.group(2)
     p_lines = [line]
     section = {
       "type": "p",
       "lines": p_lines,
-      "level": level,
     }
     sections.append(section)
     section_break = False
@@ -441,6 +435,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   print(main_header.strip(), file=output_file)
   P('<article class="main">')
   id_count_index = collections.defaultdict(int)
+  column_count = 0
   if title or date:
     P('<div class="page_title_area">')
     if title:
@@ -453,7 +448,6 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   for section in sections:
     elem_type = section["type"]
     lines = section["lines"]
-    level = int(section.get("level") or "0")
     if elem_type == "h":
       for line in lines:
         match = re.search("^(\*+) +(.*)$", line)
@@ -513,12 +507,43 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         P('</tr>')
       P('</table>')
     if elem_type == "p":
-      P('<p class="lv{:d}">', level, end="")
-      for i, line in enumerate(lines):
-        PrintText(P, index, line.strip(), 1)
-        if i < len(lines) - 1:
-          P('<br/>')
-      P('</p>')
+      column_match = re.search(r"^\[!(.*?)!\](.*)$", lines[0])
+      if column_match:
+        column_count += 1
+        caption = column_match.group(1)
+        lines[0] = column_match.group(2).strip()
+        column_class = "column_overt"
+        if caption.startswith("~"):
+          column_class = "column_covert"
+          caption = caption[1:]
+        caption = caption.strip()
+        P('<div class="column_trigger_area">')
+        P('<span id="column_trigger{}" class="column_trigger {}_trigger"'
+          ' onclick="open_column(this);" data-column-id="column{:d}">☞ {}</span>',
+          column_count, column_class, column_count, caption or "Column")
+        P('</div>')
+        P('<section id="column{}" class="column {}">', column_count, column_class)
+        P('<div class="column_close" onclick="close_column(this);">×</div>', caption)
+        if caption:
+          P('<div class="column_caption">{}</div>', caption)
+        for line in lines:
+          if not line: continue
+          P('<div class="column_line">', end="")
+          PrintText(P, index, line.strip(), 1)
+          P('</div>')
+        P('</section>')
+      else:
+        level = 0
+        match = re.search(r"^(>+) +(.*)$", lines[0])
+        if match:
+          level = min(4, len(match.group(1)))
+          lines[0] = match.group(2).strip()
+        P('<p class="lv{:d}">', level, end="")
+        for i, line in enumerate(lines):
+          PrintText(P, index, line.strip(), 1)
+          if i < len(lines) - 1:
+            P('<br/>')
+        P('</p>')
     if elem_type == "pre":
       P('<pre>', end="")
       for i, line in enumerate(lines):

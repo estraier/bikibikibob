@@ -2,6 +2,7 @@
 
 function main() {
   adjust_images();
+  adjust_columns();
   check_comments();
   render_comment_history();
 }
@@ -18,6 +19,30 @@ function adjust_images() {
       }
     }
   }
+}
+
+function adjust_columns() {
+  for (const column of document.getElementsByClassName("column_overt")) {
+    column.style.display = "block";
+  }
+  for (const trigger of document.getElementsByClassName("column_overt_trigger")) {
+    trigger.style.display = "none";
+  }
+}
+
+function open_column(trigger_elem) {
+  const column_id = trigger_elem.dataset.columnId;
+  const column = document.getElementById(column_id);
+  column.style.display = "block";
+  trigger_elem.style.display = "none";
+}
+
+function close_column(close_elem) {
+  const column = close_elem.parentElement;
+  const trigger_id = column.id.replace("column", "column_trigger");
+  const trigger_elem = document.getElementById(trigger_id);
+  column.style.display = "none";
+  trigger_elem.style.display = "inline-block";
 }
 
 function search_tags(tag_elem) {
