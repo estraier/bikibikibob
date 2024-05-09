@@ -48,6 +48,7 @@ def main():
   script_url = os.environ.get("REQUEST_SCHEME" or "http") + "://"
   script_url += os.environ.get("HTTP_HOST" or "localhost")
   script_url += os.environ.get("REQUEST_URI" or "/bbb_comment.cgi")
+  script_url = re.sub(r"\?.*", "", script_url)
   referrer_url = os.environ.get("HTTP_REFERER", "")
   remote_addr = os.environ.get("REMOTE_ADDR", "")
   if script_filename:
