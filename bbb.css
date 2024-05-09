@@ -47,7 +47,7 @@ div.site_title_area div.subtitle {
 
 /* page title */
 article.main {
-  margin: 0 0 3ex 0;
+    margin: 0 0 3ex 0;
 }
 article.main div.page_title_area {
     margin: 1ex 0 1.2ex 0;
@@ -742,65 +742,65 @@ div.comment_history_area div.history_message {
 
 /* for large screens */
 @media screen and (min-width:750px) {
-  html {
-      background: #eee;
-  }
-  body {
-      display: inline-block;
-      width: 700px;
-      margin: 1ex 1ex;
-      padding: 1ex 2ex;
-      border: 1pt solid #ccc;
-      border-radius: 1ex;
-      text-align: left;
-      background: #fff;
-  }
-  article.main img.emb_image1 {
-      max-height: 490px;
-  }
-  article.main img.emb_image2 {
-      max-height: 330px;
-  }
-  article.main img.emb_image3 {
-      max-height: 225px;
-  }
-  article.main img.emb_image4 {
-      max-height: 170px;
-  }
-  article.main img.emb_image5 {
-      max-height: 140px;
-  }
-  article.main video.emb_video1 {
-      max-height: 560px;
-  }
-  article.main video.emb_video2 {
-      max-height: 330px;
-  }
-  article.main video.emb_video3 {
-      max-height: 225px;
-  }
-  article.main video.emb_video4 {
-      max-height: 170px;
-  }
-  article.main video.emb_video5 {
-      max-height: 140px;
-  }
-  article.main iframe.youtube1 {
-      width: 560px;
-      height: 340px;
-  }
-  article.main iframe.youtube2 {
-      width: 315px;
-      height: 200px;
-  }
-  article.main iframe.maps1 {
-      width: 500px;
-      height: 400px;
-  }
-  article.main iframe.maps2 {
-      width: 300px;
-      height: 240px;
-  }
+    html {
+        background: #eee;
+    }
+    body {
+        display: inline-block;
+        width: 700px;
+        margin: 1ex 1ex;
+        padding: 1ex 2ex;
+        border: 1pt solid #ccc;
+        border-radius: 1ex;
+        text-align: left;
+        background: #fff;
+    }
+    article.main img.emb_image1 {
+        max-height: 490px;
+    }
+    article.main img.emb_image2 {
+        max-height: 330px;
+    }
+    article.main img.emb_image3 {
+        max-height: 225px;
+    }
+    article.main img.emb_image4 {
+        max-height: 170px;
+    }
+    article.main img.emb_image5 {
+        max-height: 140px;
+    }
+    article.main video.emb_video1 {
+        max-height: 560px;
+    }
+    article.main video.emb_video2 {
+        max-height: 330px;
+    }
+    article.main video.emb_video3 {
+        max-height: 225px;
+    }
+    article.main video.emb_video4 {
+        max-height: 170px;
+    }
+    article.main video.emb_video5 {
+        max-height: 140px;
+    }
+    article.main iframe.youtube1 {
+        width: 560px;
+        height: 340px;
+    }
+    article.main iframe.youtube2 {
+        width: 315px;
+        height: 200px;
+    }
+    article.main iframe.maps1 {
+        width: 500px;
+        height: 400px;
+    }
+    article.main iframe.maps2 {
+        width: 300px;
+        height: 240px;
+    }
 }
 
 /* for small screens */
