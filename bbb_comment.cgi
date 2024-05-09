@@ -20,7 +20,6 @@ import dateutil.tz
 import fcntl
 import hashlib
 import html
-import math
 import os
 import re
 import sys
@@ -46,7 +45,9 @@ CHECK_NONCE = True
 def main():
   request_method = os.environ.get("REQUEST_METHOD", "GET")
   script_filename = os.environ.get("SCRIPT_FILENAME", "")
-  script_url = os.environ.get("SCRIPT_URI", "")
+  script_url = os.environ.get("REQUEST_SCHEME" or "http") + "://"
+  script_url += os.environ.get("HTTP_HOST" or "localhost")
+  script_url += os.environ.get("REQUEST_URI" or "/bbb_comment.cgi")
   referrer_url = os.environ.get("HTTP_REFERER", "")
   remote_addr = os.environ.get("REMOTE_ADDR", "")
   if script_filename:
@@ -65,7 +66,7 @@ def main():
     else:
       params[key] = value.value
   action = params.get("action") or ""
-  if CHECK_REFERRER and script_url and referrer_url:
+  if CHECK_REFERRER and referrer_url:
     script_parts = urllib.parse.urlparse(script_url)
     referrer_parts = urllib.parse.urlparse(referrer_url)
     if referrer_parts.netloc != script_parts.netloc:
