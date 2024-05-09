@@ -669,6 +669,11 @@ def PrintText(P, index, text, depth):
       if idx > 0:
         P('{}', text[:idx], end="")
         text = text[idx:]
+      match = re.search("^\[\|\|(.*?)\|\|\]", text)
+      if match:
+        P('{}', match.group(1), end="")
+        text = text[match.end():]
+        continue
       match = re.search("^\[\*(.*?)\*\]", text)
       if match:
         P('<b>', end="")
