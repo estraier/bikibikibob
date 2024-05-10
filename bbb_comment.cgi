@@ -253,7 +253,7 @@ def DateToUnixTime(date):
     int(match.group(4)), int(match.group(5)), int(match.group(6)),
     tzinfo=dateutil.tz.tzlocal())
   return int(ts.timestamp())
-  
+
 
 def DoCountComments(resource_dir, comment_dir, params):
   p_resource = params.get("resource") or ""

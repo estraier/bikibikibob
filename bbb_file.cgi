@@ -172,7 +172,7 @@ table.file_table td.name {
 table.file_table div.process_buttons_row {
   position: absolute;
   bottom: 1.2ex;
-  right: 0.8ex;  
+  right: 0.8ex;
   width: 100%;
   text-align: right;
 }
@@ -379,7 +379,7 @@ def main():
     PrintDirectory(params, data_dirs)
   print(MAIN_FOOTER_TEXT.strip())
 
-  
+
 def TextToInt(text):
   try:
     return int(text)
@@ -417,7 +417,7 @@ def NormalizeFilename(name):
   name = re.sub(r"\s+", " ", name).strip()
   name = re.sub(r" ", "_", name)
   return name
-  
+
 
 def ProcessUpload(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
@@ -484,7 +484,7 @@ def ProcessUpload(params, data_dirs):
     PrintError("upload failed: " + str(e))
     return
   P('<p class="info">The file "{}" has been uploaded successfully.</p>', filename)
-  
+
 
 def ProcessRemoval(params, data_dirs):
   p_res = params.get("res", "")
@@ -590,7 +590,7 @@ def PrintControl(params, data_dirs, script_url):
   P('</select>')
   P('<input type="submit" value="view"/>')
   P('</div>')
-  P('</form>')  
+  P('</form>')
   P('</td>')
   P('</tr>')
   P('<tr>')
@@ -628,7 +628,7 @@ def PrintControl(params, data_dirs, script_url):
   P('</tr>')
   P('</table>')
   P('</div>')
-    
+
 
 def SizeExpr(num):
   if num > 1024 * 1024 * 1024:
@@ -714,7 +714,7 @@ def PrintDirectory(params, data_dirs):
   P('<th>#</th>')
   P('<th>name</th>')
   P('<th>attributes</th>')
-  P('<th>preview</th>')  
+  P('<th>preview</th>')
   P('</tr>')
   for i, data_file in enumerate(data_files):
     num = i + 1 + start_index
@@ -745,7 +745,7 @@ def PrintDirectory(params, data_dirs):
     P('<td class="preview">', end="")
     PrintPreview(ext, path, url, True)
     P('</td>', num)
-    P('</tr>')    
+    P('</tr>')
   P('</table>')
   PrintPagenation()
 
@@ -888,7 +888,7 @@ def PrintRemovePreview(params, data_dirs, script_url):
   P('</div>')
   P('</div>')
 
-  
+
 def PrintPreviewTextDigest(path):
   P('<pre class="preview_data">', end="")
   with open(path) as input_file:

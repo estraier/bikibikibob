@@ -856,7 +856,7 @@ def PrintImage(P, params):
     P('</a>', end="")
     P('</span>')
   P('</div>')
-  
+
 
 def PrintVideo(P, params):
   P('<div class="video_area">')
