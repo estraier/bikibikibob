@@ -37,8 +37,9 @@ DATA_DIRS = [
   ("HOGE", "hoge", "hoge"),
   ("ARTICLES", "input", "input"),
 ]
-NUM_FILES_IN_PAGE = 10
+NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
+MAX_TEXT_SIZE = 1024 * 1024 * 16
 IGNORE_FILENAME_REGEXES = [
   r"^\.", r"\.(cgi)$", "^(bbb)\.",
 ]
@@ -81,6 +82,9 @@ body {
 }
 h1 {
   font-size: 120%;
+}
+h1 a {
+  color: #000;
 }
 a {
   color: #02a;
@@ -160,17 +164,43 @@ table.file_table td.num {
    color: #333;
 }
 table.file_table td.name {
+  position: relative;
+  padding-top: 1ex;
   width: 24ex;
   font-size: 95%;
 }
+table.file_table div.process_buttons_row {
+  position: absolute;
+  bottom: 1.2ex;
+  right: 0.8ex;  
+  width: 100%;
+  text-align: right;
+}
+table.file_table a.process_button {
+  display: inline-block;
+  width: 4ex;
+  text-align: center;
+  font-size: 90%;
+  color: #111;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1pt solid #aaa;
+  border-radius: 1ex;
+  background: #eee;
+  opacity: 0.3;
+}
+table.file_table a.process_button:hover {
+  opacity: 1.0;
+}
 table.file_table td.attrs {
+  padding-top: 1ex;
   font-size: 90%;
   color: #333;
 }
 table.file_table td.preview {
   width: 52ex;
 }
-table.file_table td.preview pre {
+table.file_table td.preview pre.preview_data {
   margin: 0;
   padding: 0;
   width: 58ex;
@@ -180,12 +210,12 @@ table.file_table td.preview pre {
   color: #444;
   background: #eee;
 }
-table.file_table td.preview img {
+table.file_table td.preview img.preview_data {
   max-width: 100%;
   max-height: 30ex;
   overflow: hidden;
 }
-table.file_table td.preview video {
+table.file_table td.preview video.preview_data {
   max-width: 100%;
   max-height: 30ex;
   overflow: hidden;
@@ -193,6 +223,56 @@ table.file_table td.preview video {
 table.file_table td.prview span {
   color: #888;
 }
+div.preview_edit_area {
+  margin: 1ex 1ex;
+}
+div.preview_edit_area div.control_row {
+  padding: 1.0ex 0;
+}
+div.preview_edit_area textarea.edit_data {
+  width: 97%;
+  height: 500px;
+  font-size: 65%;
+  word-break: break-all;
+}
+div.preview_confirm_area {
+  margin: 1ex 1ex;
+}
+div.preview_confirm_area div.preview_confirm_action {
+  margin: 1ex 1ex;
+}
+div.preview_confirm_area input.confirm_button {
+  margin: 0 1ex;
+}
+div.preview_confirm_area div.control_row {
+  padding: 1.0ex 0;
+}
+div.preview_confirm_area div.hidden_row {
+  display: none;
+}
+div.preview_confirm_area pre.preview_data {
+  padding: 0.5ex 0.8ex;
+  width: 95%;
+  max-height: 400px;
+  word-break: break-all;
+  overflow: scroll;
+  font-size: 70%;
+  color: #444;
+  background: #eee;
+}
+div.preview_confirm_area img.preview_data {
+
+  max-width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+div.preview_confirm_area video.preview_data {
+  max-width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+
 @media screen and (min-width:750px) {
   html {
     background: #eee;
@@ -234,6 +314,9 @@ function check_upload() {
   }
   return true;
 }
+function go_back() {
+  history.back();
+}
 /*]]>*/</script>
 </head>
 <body onload="main();">
@@ -273,9 +356,27 @@ def main():
   print(MAIN_HEADER_TEXT.strip())
   P('<h1><a href="{}">BikiBikiBob Filer</a></h1>', script_url)
   if p_action == "upload":
-    ProcessUpload(params, data_dirs)
-  PrintControl(params, data_dirs)
-  PrintDirectory(params, data_dirs)
+    if request_method == "POST":
+      ProcessUpload(params, data_dirs)
+    else:
+      PrintError(403, "Forbidden", "bad method")
+  if p_action == "remove":
+    if request_method == "POST":
+      ProcessRemoval(params, data_dirs)
+    else:
+      PrintError(403, "Forbidden", "bad method")
+  if p_action == "edit":
+    if request_method == "POST":
+      ProcessEdit(params, data_dirs)
+    else:
+      PrintError(403, "Forbidden", "bad method")
+  PrintControl(params, data_dirs, script_url)
+  if p_action == "edit-preview":
+    PrintEditPreview(params, data_dirs, script_url)
+  elif p_action == "remove-preview":
+    PrintRemovePreview(params, data_dirs, script_url)
+  else:
+    PrintDirectory(params, data_dirs)
   print(MAIN_FOOTER_TEXT.strip())
 
   
@@ -326,7 +427,7 @@ def ProcessUpload(params, data_dirs):
   p_naming = params.get("naming", "local").strip()
   p_overwrite = params.get("overwrite", "force").strip()
   if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("invalid dir parameter")
+    PrintError("upload failed:invalid dir parameter")
     return
   if not p_file or not p_file_filename:
     PrintError("upload failed: file is not specified")
@@ -385,7 +486,82 @@ def ProcessUpload(params, data_dirs):
   P('<p class="info">The file "{}" has been uploaded successfully.</p>', filename)
   
 
-def PrintControl(params, data_dirs):
+def ProcessRemoval(params, data_dirs):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_order = params.get("order", "date_r").strip()
+  p_page = TextToInt(params.get("page", "1"))
+  if p_dir < 1 or p_dir > len(data_dirs):
+    PrintError("removal failed:invalid dir parameter")
+    return
+  if p_res.find("/") >= 0:
+    PrintError("removal failed: invalid res parameter")
+    return
+  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    PrintError("removal failed: no such directory")
+    return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    PrintError("preview failed: no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError("preview failed: not a regular file")
+    return
+  try:
+    os.remove(path)
+  except Exception as e:
+    PrintError("removal failed: " + str(e))
+    return
+  P('<p class="info">The file "{}" has been removed successfully.</p>', p_res)
+
+
+def ProcessEdit(params, data_dirs):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_order = params.get("order", "date_r").strip()
+  p_page = TextToInt(params.get("page", "1"))
+  p_text = params.get("text")
+  if p_dir < 1 or p_dir > len(data_dirs):
+    PrintError("edit failed:invalid dir parameter")
+    return
+  if p_res.find("/") >= 0:
+    PrintError("edit failed: invalid res parameter")
+    return
+  if p_text == None:
+    PrintError("edit failed: no text parameter")
+    return
+  if len(p_text) > MAX_TEXT_SIZE:
+    PrintError("edit failed: too larget text")
+    return
+  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    PrintError("edit failed: no such directory")
+    return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    PrintError("edit failed: no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError("edit failed: not a regular file")
+    return
+  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
+  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  if ext not in TEXT_EXTS:
+    PrintError("edit failed: not a text file")
+    return
+  try:
+    with open(path, "w") as out_file:
+      out_file.write(p_text)
+  except Exception as e:
+    PrintError("edit failed: " + str(e))
+    return
+  P('<p class="info">The file "{}" has been updated successfully.</p>', p_res)
+
+
+def PrintControl(params, data_dirs, script_url):
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
@@ -396,7 +572,7 @@ def PrintControl(params, data_dirs):
   P('<tr>')
   P('<td class="label">View:</td>')
   P('<td class="input">')
-  P('<form name="view_form" method="GET" autocomplete="off">')
+  P('<form name="view_form" action="{}" method="GET" autocomplete="off">', script_url)
   P('<div class="control_row">')
   P('<select name="dir">')
   for i, (dir_label, dir_path, dir_url) in enumerate(data_dirs):
@@ -420,8 +596,8 @@ def PrintControl(params, data_dirs):
   P('<tr>')
   P('<td class="label">Upload:</td>')
   P('<td class="input">')
-  P('<form name="upload_form" method="POST" enctype="multipart/form-data" autocomplete="off"'
-    ' onsubmit="return check_upload();">')
+  P('<form name="upload_form" action="{}" method="POST" enctype="multipart/form-data"'
+    ' autocomplete="off" onsubmit="return check_upload();">', script_url)
   P('<div class="control_row">')
   P('<input type="file" id="input_file" name="file"/>')
   P('<select id="select_name" name="naming" onchange="adjust_control();">')
@@ -442,7 +618,6 @@ def PrintControl(params, data_dirs):
   P('Filename: <input type="input" id="input_filename" name="newname" value=""/>')
   P('</div>')
   P('<div class="hidden_row">')
-  P('<p>hoge</p>')
   P('<input type="hidden" name="action" value="upload"/>')
   P('<input type="hidden" name="dir" value="{}"/>', p_dir)
   P('<input type="hidden" name="order" value="{}"/>', p_order)
@@ -552,6 +727,15 @@ def PrintDirectory(params, data_dirs):
     P('<td class="num">{}</td>', num)
     P('<td class="name">')
     P('<div><a href="{}">{}</a></div>', url, name)
+    P('<div class="process_buttons_row">')
+    if ext in TEXT_EXTS:
+      edit_url = "?action=edit-preview&res={}&dir={}&order={}&page={}".format(
+        name, p_dir, p_order, p_page)
+      P('<a href="{}" class="process_button">ed</a>', edit_url)
+    remove_url = "?action=remove-preview&res={}&dir={}&order={}&page={}".format(
+      name, p_dir, p_order, p_page)
+    P('<a href="{}" class="process_button">rm</a>', remove_url)
+    P('</div>')
     P('</td>')
     P('<td class="attrs">')
     P('<div>{}</div>', SizeExpr(st.st_size))
@@ -559,16 +743,19 @@ def PrintDirectory(params, data_dirs):
       P('<div>{}</div>', date_expr)
     P('</td>')
     P('<td class="preview">', end="")
-    PrintPreview(ext, path, url)
+    PrintPreview(ext, path, url, True)
     P('</td>', num)
     P('</tr>')    
   P('</table>')
   PrintPagenation()
 
 
-def PrintPreview(ext, path, url):
+def PrintPreview(ext, path, url, digest):
   if ext in TEXT_EXTS:
-    PrintPreviewText(path)
+    if digest:
+      PrintPreviewTextDigest(path)
+    else:
+      PrintPreviewTextFull(path)
   elif ext in IMAGE_EXTS:
     PrintPreviewImage(url)
   elif ext in VIDEO_EXTS:
@@ -577,8 +764,133 @@ def PrintPreview(ext, path, url):
     P('<span class="nopreview">-</span>')
 
 
-def PrintPreviewText(path):
-  P('<pre>', end="")
+def PrintEditPreview(params, data_dirs, script_url):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_order = params.get("order", "date_r").strip()
+  p_page = TextToInt(params.get("page", "1"))
+  if not p_res:
+    PrintError("preview failed: invalid res parameter")
+    return
+  if p_res.find("/") >= 0:
+    PrintError("preview failed: invalid res parameter")
+    return
+  if p_dir < 1 or p_dir > len(data_dirs):
+    PrintError("preview failed: invalid dir parameter")
+    return
+  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    PrintError("preview failed: no such directory")
+    return
+  for ignore_regex in IGNORE_FILENAME_REGEXES:
+    if re.search(ignore_regex, p_res):
+      PrintError("preview failed: forbidden filename")
+      return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    PrintError("preview failed: no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError("preview failed: not a regular file")
+    return
+  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
+  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  if ext not in TEXT_EXTS:
+    PrintError("preview failed: not a text file")
+    return
+  P('<div class="preview_edit_area">')
+  P('<p>Edit the text content and save.</p>')
+  P('<div class="preview_confirm_action">')
+  P('<form name="confirm_form" action="{}" method="POST" autocomplete="off">', script_url)
+  P('<div class="control_row">')
+  P('<input type="submit" value="save" class="confirm_button"/>')
+  P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
+  P('</div>')
+  P('<div class="control_row">')
+  P('<textarea name="text" class="edit_data">', end="")
+  with open(path) as input_file:
+    for line in input_file:
+      line = line.replace('\n', '')
+      line = line.replace('\r', '')
+      P('{}', line)
+  P('</textarea>')
+  P('</div>')
+  P('<div class="hidden_row">')
+  P('<input type="hidden" name="action" value="edit"/>')
+  P('<input type="hidden" name="res" value="{}"/>', p_res)
+  P('<input type="hidden" name="dir" value="{}"/>', p_dir)
+  P('<input type="hidden" name="order" value="{}"/>', p_order)
+  P('<input type="hidden" name="page" value="{}"/>', p_page)
+  P('</div>')
+  P('</form>')
+  P('</div>')
+  P('</div>')
+
+
+def PrintRemovePreview(params, data_dirs, script_url):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_order = params.get("order", "date_r").strip()
+  p_page = TextToInt(params.get("page", "1"))
+  if not p_res:
+    PrintError("preview failed: invalid res parameter")
+    return
+  if p_res.find("/") >= 0:
+    PrintError("preview failed: invalid res parameter")
+    return
+  if p_dir < 1 or p_dir > len(data_dirs):
+    PrintError("preview failed: invalid dir parameter")
+    return
+  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    PrintError("preview failed: no such directory")
+    return
+  for ignore_regex in IGNORE_FILENAME_REGEXES:
+    if re.search(ignore_regex, p_res):
+      PrintError("preview failed: forbidden filename")
+      return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    PrintError("preview failed: no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError("preview failed: not a regular file")
+    return
+  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
+  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  P('<div class="preview_confirm_area">')
+  P('<p>Do you really remove this file?</p>')
+  P('<div class="preview_confirm_action">')
+  P('<form name="confirm_form" action="{}" method="POST" autocomplete="off">', script_url)
+  P('<div class="control_row">')
+  P('<input type="submit" value="remove" class="confirm_button"/>')
+  P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
+  P('</div>')
+  P('<div class="hidden_row">')
+  P('<input type="hidden" name="action" value="remove"/>')
+  P('<input type="hidden" name="res" value="{}"/>', p_res)
+  P('<input type="hidden" name="dir" value="{}"/>', p_dir)
+  P('<input type="hidden" name="order" value="{}"/>', p_order)
+  P('<input type="hidden" name="page" value="{}"/>', p_page)
+  P('</div>')
+  P('</form>')
+  P('</div>')
+  P('<ul>')
+  P('<li>dir: {}</li>', dir_label)
+  P('<li>name: <b>{}</b></li>', p_res)
+  P('<li>size: {}</li>', SizeExpr(st.st_size))
+  P('<li>date: {}</li>', DateExpr(st.st_mtime))
+  P('</ul>')
+  P('<div class="preview_pane">')
+  PrintPreview(ext, path, url, False)
+  P('</div>')
+  P('</div>')
+
+  
+def PrintPreviewTextDigest(path):
+  P('<pre class="preview_data">', end="")
   with open(path) as input_file:
     num_line = 0
     for line in input_file:
@@ -590,12 +902,22 @@ def PrintPreviewText(path):
   P('</pre>')
 
 
+def PrintPreviewTextFull(path):
+  P('<pre class="preview_data">', end="")
+  with open(path) as input_file:
+    for line in input_file:
+      line = line.replace('\n', '')
+      line = line.replace('\r', '')
+      P('{}', line)
+  P('</pre>')
+
+
 def PrintPreviewImage(url):
-  P('<img src="{}"/>', url)
+  P('<img src="{}" class="preview_data"/>', url)
 
 
 def PrintPreviewVideo(url):
-  P('<video src="{}" controls="controls" preload="metadata"/>', url)
+  P('<video src="{}" controls="controls" preload="metadata" class="preview_data"/>', url)
 
 
 if __name__=="__main__":
