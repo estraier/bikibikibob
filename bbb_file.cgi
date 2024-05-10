@@ -24,6 +24,7 @@ import math
 import os
 import re
 import stat
+import subprocess
 import sys
 import time
 import unicodedata
@@ -37,6 +38,8 @@ DATA_DIRS = [
   ("HOGE", "hoge", "hoge"),
   ("ARTICLES", "input", "input"),
 ]
+UPDATE_BBB_GENERATE = "bbb_generate.py"
+UPDATE_BBB_CONF = "bbb.conf"
 NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
 MAX_TEXT_SIZE = 1024 * 1024 * 16
@@ -223,11 +226,29 @@ table.file_table td.preview video.preview_data {
 table.file_table td.prview span {
   color: #888;
 }
+pre.bbb_update {
+  width: 97%;
+  margin: 0;
+  padding: 0;
+  max-height: 5em;
+  font-size: 80%;
+  color: #888;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f8f8f8;
+  border: 1pt solid #ccc;
+  border-radius: 1ex;
+  overflow: scroll;
+}
 div.preview_edit_area {
   margin: 1ex 1ex;
 }
 div.preview_edit_area div.control_row {
   padding: 1.0ex 0;
+}
+div.preview_edit_area span.control_cell {
+  display: inline-block;
+  margin-left: 2ex;
 }
 div.preview_edit_area textarea.edit_data {
   width: 97%;
@@ -271,8 +292,6 @@ div.preview_confirm_area video.preview_data {
   max-height: 400px;
   overflow: hidden;
 }
-
-
 @media screen and (min-width:750px) {
   html {
     background: #eee;
@@ -315,7 +334,8 @@ function check_upload() {
   return true;
 }
 function go_back() {
-  history.back();
+  const back_url = document.location.toString().replace(/action=[-a-z]+/, "action=view");
+  document.location = back_url;
 }
 /*]]>*/</script>
 </head>
@@ -339,6 +359,10 @@ def main():
   for label, path, url in DATA_DIRS:
     path = os.path.join(base_dir, path)
     data_dirs.append((label, path, url))
+  if UPDATE_BBB_CONF:
+    update_bbb_conf = os.path.join(base_dir, UPDATE_BBB_CONF)
+  else:
+    update_bbb_conf = ""
   form = cgi.FieldStorage()
   params = {}
   for key in form.keys():
@@ -351,6 +375,7 @@ def main():
     else:
       params[key] = value.value
   p_action = params.get("action", "")
+  p_update_bbb = params.get("update_bbb", "")
   print("Content-type: application/xhtml+xml")
   print("")
   print(MAIN_HEADER_TEXT.strip())
@@ -368,6 +393,9 @@ def main():
   if p_action == "edit":
     if request_method == "POST":
       ProcessEdit(params, data_dirs)
+      if update_bbb_conf and p_update_bbb == "on":
+        ProcessUpdateBBB(update_bbb_conf)
+        p_action = "edit-preview"
     else:
       PrintError(403, "Forbidden", "bad method")
   PrintControl(params, data_dirs, script_url)
@@ -387,10 +415,6 @@ def TextToInt(text):
     return 0
 
 
-def TextToBool(text):
-  if not text: return False
-  return text.lower() in ["true", "yes", "on", "1"]
-
 def esc(expr):
   if expr is None:
     return ""
@@ -404,6 +428,10 @@ def P(*args, end="\n"):
       arg = esc(arg)
     esc_args.append(arg)
   print(args[0].format(*esc_args), end=end)
+
+
+def PrintInfo(message):
+  P('<p class="info">{}</p>', message)
 
 
 def PrintError(message):
@@ -483,7 +511,7 @@ def ProcessUpload(params, data_dirs):
   except Exception as e:
     PrintError("upload failed: " + str(e))
     return
-  P('<p class="info">The file "{}" has been uploaded successfully.</p>', filename)
+  PrintInfo('The file "{}" has been uploaded successfully.'.format(filename))
 
 
 def ProcessRemoval(params, data_dirs):
@@ -514,7 +542,7 @@ def ProcessRemoval(params, data_dirs):
   except Exception as e:
     PrintError("removal failed: " + str(e))
     return
-  P('<p class="info">The file "{}" has been removed successfully.</p>', p_res)
+  PrintInfo('The file "{}" has been removed successfully.'.format(p_res))
 
 
 def ProcessEdit(params, data_dirs):
@@ -558,7 +586,34 @@ def ProcessEdit(params, data_dirs):
   except Exception as e:
     PrintError("edit failed: " + str(e))
     return
-  P('<p class="info">The file "{}" has been updated successfully.</p>', p_res)
+  PrintInfo('The file "{}" has been updated successfully.'.format(p_res))
+
+
+def ProcessUpdateBBB(update_bbb_conf):
+  if not os.path.isfile(update_bbb_conf):
+    PrintError("BBB failed: missing BBB config")
+    return
+  old_path = os.environ.get("PATH")
+  if old_path:
+    new_path = old_path + ":/usr/local/bin:."
+  else:
+    new_path = "/bin:/usr/bin:/usr/local/bin:."
+  os.environ["PATH"] = new_path
+  old_path = os.environ.get("PATH")
+  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, update_bbb_conf)
+  PrintInfo('Running "{}".'.format(command))
+  try:
+    output = subprocess.Popen(
+      command, stderr=subprocess.PIPE, shell=True).stderr.readlines()
+  except Exception as e:
+    PrintError("edit failed: " + str(e))
+    return
+  P('<pre class="bbb_update">', end="")
+  for line in output:
+    line = line.decode()
+    line = line.replace("\t", "  ").rstrip()
+    P('{}', line)
+  P('</pre>')
 
 
 def PrintControl(params, data_dirs, script_url):
@@ -769,6 +824,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
+  p_update_bbb = params.get("update_bbb", "").strip()
   if not p_res:
     PrintError("preview failed: invalid res parameter")
     return
@@ -806,13 +862,20 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('<div class="control_row">')
   P('<input type="submit" value="save" class="confirm_button"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
+  if UPDATE_BBB_CONF and ext == "art":
+    P('<span class="control_cell">', end="")
+    P('Update BBB: <input type="checkbox" name="update_bbb"', end="")
+    if p_update_bbb == "on":
+      P(' checked="checked"', end="")
+    P('/>', end="")
+    P('</span>')
   P('</div>')
   P('<div class="control_row">')
   P('<textarea name="text" class="edit_data">', end="")
   with open(path) as input_file:
     for line in input_file:
-      line = line.replace('\n', '')
-      line = line.replace('\r', '')
+      line = line.replace("\n", "")
+      line = line.replace("\r", "")
       P('{}', line)
   P('</textarea>')
   P('</div>')
@@ -906,8 +969,8 @@ def PrintPreviewTextFull(path):
   P('<pre class="preview_data">', end="")
   with open(path) as input_file:
     for line in input_file:
-      line = line.replace('\n', '')
-      line = line.replace('\r', '')
+      line = line.replace("\n", "")
+      line = line.replace("\r", "")
       P('{}', line)
   P('</pre>')
 
