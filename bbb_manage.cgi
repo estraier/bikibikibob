@@ -34,16 +34,18 @@ import urllib.parse
 
 DATA_DIRS = [
   # Label, local path, URL path, bbb.conf
-  #("input", "/home/www/myblog-input", ""),
-  #("data", "/home/www/public/myblog", "hoge"),
+  #("input", "/home/www/myblog-input", "", "/home/www/myblog-input/bbb.conf"),
+  #("output", "/home/www/public/myblog", "/myblog", ""),
+  #("data", "/home/www/public/myblog/data", "/myblog/data", ""),
   ("input", "input", "input", "bbb.conf"),
+  ("output", "output", "output", ""),
 ]
 UPDATE_BBB_GENERATE = "bbb_generate.py"
 NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
 MAX_TEXT_SIZE = 1024 * 1024 * 16
 IGNORE_FILENAME_REGEXES = [
-  r"^\.", r"\.(cgi)$", "^(bbb)\.",
+  r"^\.", r"\.(cgi)$", r"^(bbb)\.", r"^__.*__\..*$",
 ]
 TEXT_EXTS = [
   "txt", "art", "cmt", "tsv", "csv", "json",
@@ -52,7 +54,7 @@ TEXT_EXTS = [
   "c", "cc", "cxx", "h", "hxx", "java", "py", "rb", "go", "pl", "pm", "lua",
 ]
 IMAGE_EXTS = [
-  "jpg", "jpeg", "png", "gif", "tif", "tiff", "svg",
+  "jpg", "jpeg", "png", "gif", "tiff", "tif", "svg",
   "pnm", "pbm", "pgm", "ppm", "bmp", "heic", "heif", "webp",
 ]
 VIDEO_EXTS = [
@@ -281,7 +283,6 @@ div.preview_confirm_area pre.preview_data {
   background: #eee;
 }
 div.preview_confirm_area img.preview_data {
-
   max-width: 100%;
   max-height: 400px;
   overflow: hidden;
@@ -380,6 +381,9 @@ def main():
       params[key] = value.value
   p_action = params.get("action", "").strip()
   p_update_bbb = params.get("update_bbb", "").strip()
+  if p_action == "download":
+    ProcessDownload(params, data_dirs)
+    return
   print("Content-type: application/xhtml+xml")
   print("")
   print(MAIN_HEADER_TEXT.strip())
@@ -463,6 +467,81 @@ def ReadFileDigest(path):
   return h.hexdigest()
 
 
+def SendError(code, status, message):
+  print("Status: {} {}".format(code, status))
+  print("Content-Type: text/plain")
+  print("")
+  print(message)
+
+
+def ProcessDownload(params, data_dirs):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  if p_dir < 1 or p_dir > len(data_dirs):
+    SendError(404, "Not Found", "invalid dir parameter")
+    return
+  if p_res.find("/") >= 0:
+    SendError(400, "Not Found", "invalid res parameter")
+    return
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    SendError(404, "Not Found", "no such directory")
+    return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    SendError(404, "Not Found", "no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    SendError(403, "Forbidden", "not a regular file")
+    return
+  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  ctype = "application/octet-stream"
+  if ext in ["xhtml"]:
+    ctype = "application/xhtml+xml"
+  elif ext in ["html", "htm"]:
+    ctype = "text/html"
+  elif ext in ["xml"]:
+    ctype = "text/html; charset=UTF-8"
+  elif ext in TEXT_EXTS:
+    ctype = "text/plain; charset=UTF-8"
+  elif ext in ["jpg", "jpeg"]:
+    ctype = "image/jpeg"
+  elif ext in ["png"]:
+    ctype = "image/png"
+  elif ext in ["gif"]:
+    ctype = "image/gif"
+  elif ext in ["tiff", "tif"]:
+    ctype = "image/gif"
+  elif ext in ["svg"]:
+    ctype = "image/svg+xml"
+  elif ext in ["heic", "heif"]:
+    ctype = "image/heif"
+  elif ext in IMAGE_EXTS:
+    ctype = "image/" + ext
+  elif ext in ["mpg", "mpeg"]:
+    ctype = "video/mpeg"
+  elif ext in ["mp4"]:
+    ctype = "video/mp4"
+  elif ext in ["mov", "qt"]:
+    ctype = "video/quicktime"
+  elif ext in ["wmv"]:
+    ctype = "video/x-ms-wmv"
+  elif ext in ["avi"]:
+    ctype = "video/x-msvideo"
+  elif ext in VIDEO_EXTS:
+    ctype = "video/" + ext
+  with open(path, "rb") as input_file:
+    print("Content-Type: " + ctype)
+    print("")
+    sys.stdout.flush()
+    while True:
+      buf = input_file.read(8192)
+      if len(buf) == 0: break
+      sys.stdout.buffer.write(buf)
+    sys.stdout.flush()
+
+
 def ProcessUpload(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
   p_file = params.get("file", b"")
@@ -536,7 +615,7 @@ def ProcessRemoval(params, data_dirs):
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
   if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("removal failed:invalid dir parameter")
+    PrintError("removal failed: invalid dir parameter")
     return
   if p_res.find("/") >= 0:
     PrintError("removal failed: invalid res parameter")
@@ -568,8 +647,9 @@ def ProcessEdit(params, data_dirs):
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
   p_text = params.get("text")
+  p_text = p_text.replace("\r\n", "\n").replace("\r", "\n")
   if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("edit failed:invalid dir parameter")
+    PrintError("edit failed: invalid dir parameter")
     return
   if p_res.find("/") >= 0:
     PrintError("edit failed: invalid res parameter")
@@ -826,7 +906,10 @@ def PrintDirectory(params, data_dirs):
     path = data_file["path"]
     st = data_file["stat"]
     ext = data_file["ext"]
-    url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(name)
+    if dir_url:
+      url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(name)
+    else:
+      url = "?action=download&res={}&dir={}".format(name, p_dir)
     P('<tr>')
     P('<td class="num">{}</td>', num)
     P('<td class="name">')
