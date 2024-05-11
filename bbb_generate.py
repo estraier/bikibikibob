@@ -86,11 +86,16 @@ def main(argv):
   args = ap.parse_args(argv)
   conf_path = args.conf
   focus_names = args.articles
+  focus_stem_set = set()
+  for name in focus_names:
+    stem = re.sub(r"\.art$", "", os.path.basename(name))
+    if stem:
+      focus_stem_set.add(stem)
   start_time = time.time()
   logger.info("Process started: conf={}".format(conf_path))
   config = ReadConfig(conf_path)
   logger.info("Config: {}".format(str(config)))
-  articles = ReadInputDir(config, focus_names)
+  articles = ReadInputDir(config, focus_stem_set)
   if not articles:
     raise ValueError("no input files")
   logger.info("Number of articles: {}".format(len(articles)))
@@ -108,7 +113,7 @@ def main(argv):
       if title not in index:
         index[title] = article
       count_index[title] = count
-  MakeOutputDir(config)
+  MakeOutputDir(config, focus_stem_set)
   for article in articles:
     MakeArticle(config, articles, index, article)
   MakeTagIndex(config, articles)
@@ -184,14 +189,9 @@ def ReadArticleMetadata(path):
   return article
 
 
-def ReadInputDir(config, focus_names):
+def ReadInputDir(config, focus_stem_set):
   input_dir = config["input_dir"]
   names = os.listdir(input_dir)
-  focus_stem_set = set()
-  for name in focus_names:
-    stem = re.sub(r"\.art$", "", os.path.basename(name))
-    if stem:
-      focus_stem_set.add(stem)
   articles = []
   for name in names:
     if name.startswith("."): continue
@@ -206,7 +206,7 @@ def ReadInputDir(config, focus_names):
   return sorted(articles, key=lambda x: x["path"])
 
 
-def MakeOutputDir(config):
+def MakeOutputDir(config, focus_stem_set):
   output_dir = config["output_dir"]
   os.makedirs(output_dir, exist_ok=True)
   in_script_path = config["script_file"]
@@ -218,6 +218,8 @@ def MakeOutputDir(config):
   names = os.listdir(output_dir)
   for name in names:
     if not name.endswith(".xhtml"): continue
+    stem = re.sub(r"\.xhtml$", "", name)
+    if focus_stem_set and stem not in focus_stem_set: continue
     path = os.path.join(output_dir, name)
     is_article = False
     is_empty = True

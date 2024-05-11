@@ -628,7 +628,7 @@ def ProcessUpdateBBB(params, data_dirs):
     new_env_path = "/bin:/usr/bin:/usr/local/bin:."
   os.environ["PATH"] = new_env_path
   command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
-  if p_update_bbb == "single" and not p_res.find("'") < 0:
+  if p_update_bbb == "single" and p_res.find("'") < 0:
     command += " '{}'".format(p_res)
   PrintInfo('Running "{}".'.format(command))
   try:
