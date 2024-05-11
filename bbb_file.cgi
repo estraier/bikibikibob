@@ -46,7 +46,7 @@ IGNORE_FILENAME_REGEXES = [
   r"^\.", r"\.(cgi)$", "^(bbb)\.",
 ]
 TEXT_EXTS = [
-  "txt", "art", "tsv", "csv", "json",
+  "txt", "art", "cmt", "tsv", "csv", "json",
   "html", "xhtml", "htm", "xml",
   "css", "js",
   "c", "cc", "cxx", "h", "hxx", "java", "py", "rb", "go", "pl", "pm", "lua",
@@ -225,11 +225,11 @@ table.file_table td.preview video.preview_data {
 table.file_table td.prview span {
   color: #888;
 }
-pre.bbb_update {
+pre.bbb_update, pre.failed_text {
   width: 97%;
   margin: 0;
-  padding: 0;
-  max-height: 5em;
+  padding: 0.2ex 0.5ex;
+  max-height: 8em;
   font-size: 80%;
   color: #888;
   white-space: pre-wrap;
@@ -396,8 +396,10 @@ def main():
       PrintError(403, "Forbidden", "bad method")
   if p_action == "edit":
     if request_method == "POST":
-      ProcessEdit(params, data_dirs)
-      if UPDATE_BBB_GENERATE and p_update_bbb:
+      ok = ProcessEdit(params, data_dirs)
+      if not ok:
+        P('<pre class="failed_text">{}</pre>', params.get("text", ""))
+      if UPDATE_BBB_GENERATE and p_update_bbb and ok:
         ProcessUpdateBBB(params, data_dirs)
         p_action = "edit-preview"
     else:
@@ -449,6 +451,16 @@ def NormalizeFilename(name):
   name = re.sub(r"\s+", " ", name).strip()
   name = re.sub(r" ", "_", name)
   return name
+
+
+def ReadFileDigest(path):
+  h = hashlib.new("md5")
+  with open(path, "rb") as input_file:
+    while True:
+      buf = input_file.read(8192)
+      if len(buf) == 0: break
+      h.update(buf)
+  return h.hexdigest()
 
 
 def ProcessUpload(params, data_dirs):
@@ -551,6 +563,7 @@ def ProcessRemoval(params, data_dirs):
 
 def ProcessEdit(params, data_dirs):
   p_res = params.get("res", "")
+  p_digest = params.get("digest", "")
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
@@ -581,6 +594,10 @@ def ProcessEdit(params, data_dirs):
     return
   url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
   ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  digest = ReadFileDigest(path)
+  if p_digest != digest:
+    PrintError("edit failed: conflict with another edit")
+    return
   if ext not in TEXT_EXTS:
     PrintError("edit failed: not a text file")
     return
@@ -591,6 +608,7 @@ def ProcessEdit(params, data_dirs):
     PrintError("edit failed: " + str(e))
     return
   PrintInfo('The file "{}" has been updated successfully.'.format(p_res))
+  return True
 
 
 def ProcessUpdateBBB(params, data_dirs):
@@ -886,6 +904,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   if ext not in TEXT_EXTS:
     PrintError("preview failed: not a text file")
     return
+  digest = ReadFileDigest(path)
   P('<div class="preview_edit_area">')
   P('<p>Edit the text content and save.</p>')
   P('<div class="preview_confirm_action">')
@@ -916,6 +935,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('<div class="hidden_row">')
   P('<input type="hidden" name="action" value="edit"/>')
   P('<input type="hidden" name="res" value="{}"/>', p_res)
+  P('<input type="hidden" name="digest" value="{}"/>', digest)
   P('<input type="hidden" name="dir" value="{}"/>', p_dir)
   P('<input type="hidden" name="order" value="{}"/>', p_order)
   P('<input type="hidden" name="page" value="{}"/>', p_page)
