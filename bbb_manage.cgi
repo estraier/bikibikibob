@@ -383,7 +383,7 @@ def main():
   print("Content-type: application/xhtml+xml")
   print("")
   print(MAIN_HEADER_TEXT.strip())
-  P('<h1><a href="{}">BikiBikiBob Filer</a></h1>', script_url)
+  P('<h1><a href="{}">BikiBikiBob Manager</a></h1>', script_url)
   if p_action == "upload":
     if request_method == "POST":
       ProcessUpload(params, data_dirs)
