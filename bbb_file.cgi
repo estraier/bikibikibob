@@ -33,13 +33,12 @@ import urllib.parse
 
 
 DATA_DIRS = [
-  # Label, local path, URL path
-  ("TUT", "/home/mikio/public/bikibikibob/data", "/bikibikibob/data"),
-  ("HOGE", "hoge", "hoge"),
-  ("ARTICLES", "input", "input"),
+  # Label, local path, URL path, bbb.conf
+  #("input", "/home/www/myblog-input", ""),
+  #("data", "/home/www/public/myblog", "hoge"),
+  ("input", "input", "input", "bbb.conf"),
 ]
 UPDATE_BBB_GENERATE = "bbb_generate.py"
-UPDATE_BBB_CONF = "bbb.conf"
 NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
 MAX_TEXT_SIZE = 1024 * 1024 * 16
@@ -253,7 +252,7 @@ div.preview_edit_area span.control_cell {
 div.preview_edit_area textarea.edit_data {
   width: 97%;
   height: 500px;
-  font-size: 65%;
+  font-size: 85%;
   word-break: break-all;
 }
 div.preview_confirm_area {
@@ -313,21 +312,30 @@ function main() {
   adjust_control();
 }
 function adjust_control() {
+  const input_file = document.getElementById("input_file");
   const select_name = document.getElementById("select_name");
   const filename_row = document.getElementById("filename_row");
-  if (select_name.value == "assign") {
+  if (select_name.value == "assign" || select_name.value == "empty") {
     filename_row.style.display = "block";
+  } else {
+    filename_row.style.display = "none";
+  }
+  if (select_name.value == "empty") {
+    input_file.disabled = "disabled";
+  } else {
+    input_file.disabled = null;
   }
 }
 function check_upload() {
   const input_file = document.getElementById("input_file");
   const select_name = document.getElementById("select_name");
   const input_filename = document.getElementById("input_filename");
-  if (input_file.value == "") {
+  if (select_name.value != "empty" && input_file.value == "") {
     alert("No file is specified.");
     return false;
   }
-  if (select_name.value == "assign" && input_filename.value.trim() == "") {
+  if ((select_name.value == "assign" || select_name.value == "empty") &&
+      input_filename.value.trim() == "") {
     alert("The filename is empty.");
     return false;
   }
@@ -356,13 +364,9 @@ def main():
   script_url = re.sub(r"\?.*", "", script_url)
   base_dir = os.path.dirname(script_filename)
   data_dirs = []
-  for label, path, url in DATA_DIRS:
+  for label, path, url, conf in DATA_DIRS:
     path = os.path.join(base_dir, path)
-    data_dirs.append((label, path, url))
-  if UPDATE_BBB_CONF:
-    update_bbb_conf = os.path.join(base_dir, UPDATE_BBB_CONF)
-  else:
-    update_bbb_conf = ""
+    data_dirs.append((label, path, url, conf))
   form = cgi.FieldStorage()
   params = {}
   for key in form.keys():
@@ -374,8 +378,8 @@ def main():
       params[key] = value[0].value
     else:
       params[key] = value.value
-  p_action = params.get("action", "")
-  p_update_bbb = params.get("update_bbb", "")
+  p_action = params.get("action", "").strip()
+  p_update_bbb = params.get("update_bbb", "").strip()
   print("Content-type: application/xhtml+xml")
   print("")
   print(MAIN_HEADER_TEXT.strip())
@@ -393,8 +397,8 @@ def main():
   if p_action == "edit":
     if request_method == "POST":
       ProcessEdit(params, data_dirs)
-      if update_bbb_conf and p_update_bbb == "on":
-        ProcessUpdateBBB(update_bbb_conf)
+      if UPDATE_BBB_GENERATE and p_update_bbb:
+        ProcessUpdateBBB(params, data_dirs)
         p_action = "edit-preview"
     else:
       PrintError(403, "Forbidden", "bad method")
@@ -449,28 +453,28 @@ def NormalizeFilename(name):
 
 def ProcessUpload(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
-  p_file = params.get("file")
+  p_file = params.get("file", b"")
   p_file_filename = NormalizeFilename(params.get("file_filename", ""))
   p_newname = NormalizeFilename(params.get("newname", ""))
   p_naming = params.get("naming", "local").strip()
-  p_overwrite = params.get("overwrite", "force").strip()
+  p_overwrite = params.get("overwrite", "stop").strip()
   if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("upload failed:invalid dir parameter")
+    PrintError("upload failed: invalid dir parameter")
     return
-  if not p_file or not p_file_filename:
+  if p_naming != "empty" and (not p_file or not p_file_filename):
     PrintError("upload failed: file is not specified")
     return
   if len(p_file) > MAX_FILE_SIZE:
     PrintError("upload failed: too large file")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("upload failed: no such directory")
     return
   if p_naming == "date":
     date = datetime.datetime.fromtimestamp(time.time(), dateutil.tz.tzlocal())
     filename = date.strftime("%Y%m%d%H%M%S")
-  elif p_naming == "assign":
+  elif p_naming in ["assign", "empty"]:
     filename = p_newname
   else:
     filename = p_file_filename
@@ -525,7 +529,7 @@ def ProcessRemoval(params, data_dirs):
   if p_res.find("/") >= 0:
     PrintError("removal failed: invalid res parameter")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("removal failed: no such directory")
     return
@@ -563,7 +567,7 @@ def ProcessEdit(params, data_dirs):
   if len(p_text) > MAX_TEXT_SIZE:
     PrintError("edit failed: too larget text")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("edit failed: no such directory")
     return
@@ -589,18 +593,43 @@ def ProcessEdit(params, data_dirs):
   PrintInfo('The file "{}" has been updated successfully.'.format(p_res))
 
 
-def ProcessUpdateBBB(update_bbb_conf):
-  if not os.path.isfile(update_bbb_conf):
+def ProcessUpdateBBB(params, data_dirs):
+  p_res = params.get("res", "")
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_update_bbb = params.get("update_bbb", "").strip()
+  if not p_res:
+    PrintError("BBB failed: invalid res parameter")
+    return
+  if p_res.find("/") >= 0:
+    PrintError("BBB failed: invalid res parameter")
+    return
+  if p_dir < 1 or p_dir > len(data_dirs):
+    PrintError("BBB failed: invalid dir parameter")
+    return
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    PrintError("BBB failed: no such directory")
+    return
+  if not dir_conf or not os.path.isfile(dir_conf):
     PrintError("BBB failed: missing BBB config")
     return
-  old_path = os.environ.get("PATH")
-  if old_path:
-    new_path = old_path + ":/usr/local/bin:."
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    PrintError("BBB failed: no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError("BBB failed: not a regular file")
+    return
+  old_env_path = os.environ.get("PATH")
+  if old_env_path:
+    new_env_path = old_env_path + ":/usr/local/bin:."
   else:
-    new_path = "/bin:/usr/bin:/usr/local/bin:."
-  os.environ["PATH"] = new_path
-  old_path = os.environ.get("PATH")
-  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, update_bbb_conf)
+    new_env_path = "/bin:/usr/bin:/usr/local/bin:."
+  os.environ["PATH"] = new_env_path
+  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
+  if p_update_bbb == "single" and not p_res.find("'") < 0:
+    command += " '{}'".format(p_res)
   PrintInfo('Running "{}".'.format(command))
   try:
     output = subprocess.Popen(
@@ -620,8 +649,8 @@ def PrintControl(params, data_dirs, script_url):
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
-  p_name = params.get("nameing", "local")
-  p_over = params.get("overwrite", "force")
+  p_naming = params.get("nameing", "local")
+  p_overwrite = params.get("overwrite", "stop")
   P('<div class="control_area">')
   P('<table class="control_table">')
   P('<tr>')
@@ -630,18 +659,18 @@ def PrintControl(params, data_dirs, script_url):
   P('<form name="view_form" action="{}" method="GET" autocomplete="off">', script_url)
   P('<div class="control_row">')
   P('<select name="dir">')
-  for i, (dir_label, dir_path, dir_url) in enumerate(data_dirs):
+  for i, (dir_label, dir_path, dir_url, dir_conf) in enumerate(data_dirs):
     P('<option value="{}"', i + 1, end="")
     if p_dir == i + 1: P(' selected="selected"', end="")
     P('>dir: {}</option>', dir_label)
   P('</select>')
   P('<select name="order">')
-  for label, value in [("name asc", "name"), ("name desc", "name_r"),
-                       ("size asc", "size"), ("size desc", "size_r"),
-                       ("date asc", "date"), ("date desc", "date_r")]:
+  for label, value in [("order: name asc", "name"), ("order: name desc", "name_r"),
+                       ("order: size asc", "size"), ("order: size desc", "size_r"),
+                       ("order: date asc", "date"), ("order: date desc", "date_r")]:
     P('<option value="{}"', value, end="")
     if p_order == value: P(' selected="selected"', end="")
-    P('>order: {}</option>', label)
+    P('>{}</option>', label)
   P('</select>')
   P('<input type="submit" value="view"/>')
   P('</div>')
@@ -656,16 +685,18 @@ def PrintControl(params, data_dirs, script_url):
   P('<div class="control_row">')
   P('<input type="file" id="input_file" name="file"/>')
   P('<select id="select_name" name="naming" onchange="adjust_control();">')
-  for label, value in [("local", "local"), ("date", "date"), ("assign", "assign")]:
+  for label, value in [("name: local", "local"), ("name: date", "date"),
+                       ("name: assign", "assign"), ("empty file", "empty")]:
     P('<option value="{}"', value, end="")
-    if p_name == value: P(' selected="selected"', end="")
-    P('>name: {}</option>', label)
+    if p_naming == value: P(' selected="selected"', end="")
+    P('>{}</option>', label)
   P('</select>')
   P('<select name="overwrite">')
-  for label, value in [("force", "force"), ("rename", "rename"), ("stop", "stop")]:
+  for label, value in [("overwrite: stop", "stop"), ("overwrite: rename", "rename"),
+                       ("overwrite: force", "force")]:
     P('<option value="{}"', value, end="")
-    if p_over == value: P(' selected="selected"', end="")
-    P('>overwrite: {}</option>', label)
+    if p_overwrite == value: P(' selected="selected"', end="")
+    P('>{}</option>', label)
   P('</select>')
   P('<input type="submit" value="upload"/>')
   P('</div>')
@@ -710,7 +741,7 @@ def PrintDirectory(params, data_dirs):
   if p_page < 1:
     PrintError("invalid page parameter")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("no such directory")
     return
@@ -834,7 +865,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   if p_dir < 1 or p_dir > len(data_dirs):
     PrintError("preview failed: invalid dir parameter")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("preview failed: no such directory")
     return
@@ -862,12 +893,15 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('<div class="control_row">')
   P('<input type="submit" value="save" class="confirm_button"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
-  if UPDATE_BBB_CONF and ext == "art":
-    P('<span class="control_cell">', end="")
-    P('Update BBB: <input type="checkbox" name="update_bbb"', end="")
-    if p_update_bbb == "on":
-      P(' checked="checked"', end="")
-    P('/>', end="")
+  if UPDATE_BBB_GENERATE and dir_conf and ext == "art":
+    P('<span class="control_cell">Update BBB: ', end="")
+    P('<select name="update_bbb">', end="")
+    for label, value in [("no", ""), ("single", "single"), ("full", "full")]:
+      P('<option value="{}"', value, end="")
+      if p_update_bbb == value:
+        P(' selected="selected"', end="")
+      P('>{}</option>', label, end="")
+    P('</select>')
     P('</span>')
   P('</div>')
   P('<div class="control_row">')
@@ -905,7 +939,7 @@ def PrintRemovePreview(params, data_dirs, script_url):
   if p_dir < 1 or p_dir > len(data_dirs):
     PrintError("preview failed: invalid dir parameter")
     return
-  dir_label, dir_path, dir_url = data_dirs[p_dir-1]
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
   if not os.path.isdir(dir_path):
     PrintError("preview failed: no such directory")
     return
