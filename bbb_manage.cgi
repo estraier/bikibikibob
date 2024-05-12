@@ -39,13 +39,18 @@ DATA_DIRS = [
   #("data", "/home/www/public/myblog/data", "/myblog/data", ""),
   ("input", "input", "input", "bbb.conf"),
   ("output", "output", "output", ""),
+  #("input", "/home/mikio/dev/bikibikibob/tutorial-ja-input", "", "/home/mikio/dev/bikibikibob/tutorial-ja-bbb.conf"),
+  #("output", "/home/mikio/public/bikibikibob/tutorial-ja", "/bikibikibob/tutorial-ja", ""),
+  #("data", "/home/mikio/public/bikibikibob/data", "/bikibikibob/data", ""),
 ]
 UPDATE_BBB_GENERATE = "bbb_generate.py"
 NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
-MAX_TEXT_SIZE = 1024 * 1024 * 16
+MAX_TOTAL_FILE_SIZE = 1024 * 1024 * 1024 * 16
+MAX_NUM_FILES = 8192
+MAX_TEXT_SIZE = 1024 * 1024 * 4
 IGNORE_FILENAME_REGEXES = [
-  r"^\.", r"\.(cgi)$", r"^(bbb)\.", r"^__.*__\..*$",
+  r"^\.", r"\.(cgi)$", r"^(bbb)\.",
 ]
 TEXT_EXTS = [
   "txt", "art", "cmt", "tsv", "csv", "json",
@@ -172,6 +177,8 @@ table.file_table td.name {
   padding-top: 1ex;
   width: 24ex;
   font-size: 95%;
+  white-space: normal;
+  word-break: break-all;
 }
 table.file_table div.process_buttons_row {
   position: absolute;
@@ -562,6 +569,22 @@ def ProcessUpload(params, data_dirs):
   if not os.path.isdir(dir_path):
     PrintError("upload failed: no such directory")
     return
+  total_file_size = len(p_file)
+  num_files = 1
+  for name in os.listdir(dir_path):
+    ignore = False
+    for ignore_regex in IGNORE_FILENAME_REGEXES:
+      if re.search(ignore_regex, name):
+        ignore = True
+    if ignore: continue
+    total_file_size += os.path.getsize(os.path.join(dir_path, name))
+    num_files += 1
+  if total_file_size > MAX_TOTAL_FILE_SIZE:
+    PrintError("upload failed: exceeding the total file size limit")
+    return
+  if num_files > MAX_NUM_FILES:
+    PrintError("upload failed: exceeding the file number limit")
+    return
   if p_naming == "date":
     date = datetime.datetime.fromtimestamp(time.time(), dateutil.tz.tzlocal())
     filename = date.strftime("%Y%m%d%H%M%S")
@@ -880,7 +903,7 @@ def PrintDirectory(params, data_dirs):
   num_files = len(data_files)
   start_index = NUM_FILES_IN_PAGE * (p_page - 1)
   data_files = data_files[start_index:start_index+NUM_FILES_IN_PAGE]
-  P('<p>There are {:d} files with {}B in total.</p>',
+  P('<p>There are {:d} files with {} in total.</p>',
     num_files, SizeExpr(total_size))
   def PrintPagenation():
     num_pages = math.ceil(num_files / NUM_FILES_IN_PAGE)
