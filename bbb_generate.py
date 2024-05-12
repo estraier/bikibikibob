@@ -1041,7 +1041,7 @@ def PrintSearch(config, P, params):
   if not search_url:
     P('<div>(@search: search_url is not set)</div>')
     return
-  P('<div class="search_area" data-search-url="{}"></div>', search_url, max_num)
+  P('<div class="search_area" data-search-url="{}"></div>', search_url)
 
 
 def PrintShareButtons(config, output_file, P, article):
