@@ -1041,7 +1041,26 @@ def PrintSearch(config, P, params):
   if not search_url:
     P('<div>(@search: search_url is not set)</div>')
     return
-  P('<div class="search_area" data-search-url="{}"></div>', search_url)
+  P('<div class="search_area" data-search-url="{}">', search_url)
+  P('<form class="search_form" onsubmit="do_search(this); return false;">')
+  P('<div class="search_line">')
+  P('<span class="search_control">')
+  P('<input type="text" class="search_query" value=""/>')
+  P('<select class="search_order">')
+  P('<option value="score">order: score</option>')
+  P('<option value="name">name asc</option>')
+  P('<option value="name_r">name desc</option>')
+  P('<option value="title">title asc</option>')
+  P('<option value="title_r">title desc</option>')
+  P('<option value="date">date asc</option>')
+  P('<option value="date_r">date desc</option>')
+  P('</select>')
+  P('<input type="button" class="search_search" value="search" onclick="do_search(this);"/>')
+  P('</span>')
+  P('</div>')
+  P('</form>')
+  P('<div class="search_result"></div>')
+  P('</div>')
 
 
 def PrintShareButtons(config, output_file, P, article):

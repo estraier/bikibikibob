@@ -406,4 +406,102 @@ function update_comment_history(area, comments) {
   }
 }
 
+function do_search(elem) {
+  let search_area = null;
+  while (elem) {
+    if (elem.className == "search_area") {
+      search_area = elem;
+      break;
+    }
+    elem = elem.parentElement;
+  }
+  if (!search_area) return;
+  const search_url = search_area.dataset.searchUrl;
+  let query = search_area.getElementsByClassName("search_query")[0].value.trim();
+  let order = search_area.getElementsByClassName("search_order")[0].value.trim();
+  let result_area = search_area.getElementsByClassName("search_result")[0];
+  result_area.innerHTML = "";
+  if (query.length == 0) {
+    return;
+  }
+  const request_url = search_url + "?query=" + encodeURI(query) + "&order=" + encodeURI(order);
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      const docs = [];
+      for (const line of xhr.responseText.split("\n")) {
+        const fields = line.split("\t");
+        if (fields.length < 4) continue;
+        const snippets = [];
+        for (let i = 4; i < fields.length; i++) {
+          snippets.push(fields[i]);
+        }
+        const doc = {
+          "name": fields[0],
+          "score": parseFloat(fields[1]),
+          "title": fields[2],
+          "date": fields[3],
+          "snippets": fields.slice(4),
+        };
+        docs.push(doc);
+      }
+      update_search_result(result_area, docs);
+    }
+  };
+  xhr.onerror = function() {
+    alert('networking error while getting comment history');
+  };
+  xhr.open("GET", request_url, true);
+  xhr.send();
+}
+
+function update_search_result(result_area, docs) {
+  if (docs.length < 1) {
+    const search_result_message = document.createElement("div");
+    search_result_message.className = "search_result_message";
+    search_result_message.textContent = "(no matching items)";
+    result_area.insertBefore(search_result_message, null);
+  }
+  for (const doc of docs) {
+    const search_result_item = document.createElement("div");
+    search_result_item.className = "search_result_item";
+    const title = doc.title.length > 0 ? doc.title : doc.name;
+    const url = doc.name + ".xhtml";
+    const search_result_title = document.createElement("div");
+    const search_result_link = document.createElement("a");
+    search_result_link.textContent = title;
+    search_result_link.href = url;
+    search_result_link.className = "search_result_link";
+    search_result_title.insertBefore(search_result_link, null);
+    if (doc.date.length > 0) {
+      const search_result_date = document.createElement("span");
+      search_result_date.textContent = "(" + doc.date + ")";
+      search_result_date.className = "search_result_date";
+      search_result_title.insertBefore(search_result_date, null);
+    }
+    search_result_item.insertBefore(search_result_title, null);
+    if (doc.snippets.length > 0) {
+      const search_result_snippet_list = document.createElement("div");
+      search_result_snippet_list.className = "search_result_snippet_list";
+      let i = 0;
+      for (const snippet of doc.snippets) {
+        if (i > 0) {
+          const search_result_snippet_delim = document.createElement("span");
+          search_result_snippet_delim.textContent = " ◇ ";
+          search_result_snippet_delim.className = "search_result_snippet_delim";
+          search_result_snippet_list.insertBefore(search_result_snippet_delim, null);
+        }
+        const search_result_snippet = document.createElement("span");
+        search_result_snippet.textContent = snippet;
+        search_result_snippet.className = "search_result_snippet";
+        search_result_snippet_list.insertBefore(search_result_snippet, null);
+        i++;
+      }
+      search_result_item.insertBefore(search_result_snippet_list, null);
+    }
+    result_area.insertBefore(search_result_item, null);
+  }
+
+}
+
 // END OF FILE

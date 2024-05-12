@@ -150,6 +150,7 @@ def DoSearch(resource_dir, params):
     except Exception:
       continue
     if meta.get("generator") != "BikiBikiBob": continue
+    stem = re.sub(r"\.xhtml$", "", name)
     title = meta.get("x-bbb-title") or ""
     date = meta.get("x-bbb-date") or ""
     hit_queries = set()
@@ -232,7 +233,7 @@ def DoSearch(resource_dir, params):
       query_counts[query] = query_count
       chosen_snippets.append(text)
     doc = {
-      "name": name,
+      "name": stem,
       "title": title,
       "date": date,
       "snippets": chosen_snippets,
