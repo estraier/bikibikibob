@@ -443,9 +443,10 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     if title:
       page_url = article["name"]
       page_url = GetOutputFilename(page_url)
-      P('<h2><a href="{}">{}</a></h2>', urllib.parse.quote(page_url), title)
+      P('<h2 class="article_title"><a href="{}">{}</a></h2>',
+        urllib.parse.quote(page_url), title)
     if date:
-      P('<div class="date">{}</div>', date)
+      P('<div class="article_date">{}</div>', date)
     P('</div>')
   for section in sections:
     elem_type = section["type"]
@@ -571,6 +572,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintSiteToc(P, articles, params)
       elif name == "comment-history":
         PrintCommentHistory(config, P, params)
+      elif name == "search":
+        PrintSearch(config, P, params)
       elif name not in ["title", "date", "tags", "misc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
@@ -956,7 +959,7 @@ def PrintSiteTags(P, articles, params):
     P('<dd class="site_tags_resources">')
     for i, article in enumerate(tag_articles):
       if i > 0:
-        P(', ')
+        P(', ', end="")
       name = article["name"]
       title = article.get("title") or article["stem"]
       url = "./" + GetOutputFilename(name)
@@ -1013,7 +1016,7 @@ def PrintSiteToc(P, articles, params):
     if not title:
       title = article["stem"]
     date = article.get("date")
-    P('<li>', end="")
+    P('<li class="site_toc_item">', end="")
     P('<a href="{}">{}</a>', url, title, end="")
     if date:
       P(' <span class="attrdate">({})</span>', date, end="")
@@ -1026,8 +1029,19 @@ def PrintCommentHistory(config, P, params):
   attrs = ParseMetaParams(params)
   max_num = int(attrs.get("max") or 0)
   comment_url = config.get("comment_url") or ""
+  if not comment_url:
+    P('<div>(@comment-history: comment_url is not set)</div>')
+    return
   P('<div class="comment_history_area" data-comment-url="{}" data-comment-max="{}"></div>',
     comment_url, max_num)
+
+
+def PrintSearch(config, P, params):
+  search_url = config.get("search_url") or ""
+  if not search_url:
+    P('<div>(@search: search_url is not set)</div>')
+    return
+  P('<div class="search_area" data-search-url="{}"></div>', search_url, max_num)
 
 
 def PrintShareButtons(config, output_file, P, article):

@@ -54,21 +54,21 @@ article.main div.page_title_area {
     padding: 0;
     border-bottom: 1px dashed #aaa;
 }
-article.main h2 {
+article.main h2.article_title {
     margin: 0;
     padding: 0;
     font-size: 120%;
     color: #000;
 }
-article.main h2 a {
+article.main h2.article_title a {
     color: #000;
     text-decoration: none;
 }
-article.main h2 a:hover {
+article.main h2.article_title a:hover {
     color: #01a;
     text-decoration: underline;
 }
-article.main div.date {
+article.main div.article_date {
     margin: 0 0 0 0.5ex;
     padding: 0;
     font-size: 90%;
