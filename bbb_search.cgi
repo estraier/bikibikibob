@@ -131,6 +131,15 @@ def SegmentWeight(text, query):
   return weight
 
 
+def ParseMisc(misc):
+  tags = []
+  for tag in misc.split(","):
+    tag = re.sub(r"\s+", " ", tag).strip()
+    if not tag or tag in tags: continue
+    tags.append(tag)
+  return tags
+
+
 def DoSearch(resource_dir, params):
   p_query = (params.get("query") or "").strip()
   p_order = (params.get("order") or "").strip()
@@ -153,6 +162,8 @@ def DoSearch(resource_dir, params):
     stem = re.sub(r"\.xhtml$", "", name)
     title = meta.get("x-bbb-title") or ""
     date = meta.get("x-bbb-date") or ""
+    misc = ParseMisc(meta.get("x-bbb-misc") or "")
+    if "nosearch" in misc: continue
     hit_queries = set()
     snippets = []
     score = 0.0

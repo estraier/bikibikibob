@@ -399,6 +399,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   title = NormalizeMetaText(article.get("title") or "")
   date = NormalizeMetaText(article.get("date") or "")
   misc = NormalizeMetaText(article.get("misc") or "")
+  misc = re.sub(r" *, *", ", ", misc).strip()
   site_title = config["title"]
   site_subtitle = config.get("subtitle")
   if title:
