@@ -136,10 +136,10 @@ def ReadConfig(conf_path):
       elif name:
         config[name] = value
   base_dir = os.path.dirname(os.path.realpath(conf_path))
-  config["input_dir"] = os.path.join(base_dir, config["input_dir"])
-  config["output_dir"] = os.path.join(base_dir, config["output_dir"])
-  config["script_file"] = os.path.join(base_dir, config["script_file"])
-  config["style_file"] = os.path.join(base_dir, config["style_file"])
+  config["input_dir"] = os.path.realpath(os.path.join(base_dir, config["input_dir"]))
+  config["output_dir"] = os.path.realpath(os.path.join(base_dir, config["output_dir"]))
+  config["script_file"] = os.path.realpath(os.path.join(base_dir, config["script_file"]))
+  config["style_file"] = os.path.realpath(os.path.join(base_dir, config["style_file"]))
   if not config["site_url"]: raise ValueError("empty site_url in the config")
   if not config["title"]: raise ValueError("empty title in the config")
   if not config["language"]: raise ValueError("empty language in the config")
@@ -1042,8 +1042,6 @@ def PrintCommentHistory(config, P, params):
 
 def PrintSearch(config, P, params):
   attrs = ParseMetaParams(params)
-  print(params)
-  print(attrs)
   max_num = int(attrs.get("max") or 0)
   perpage = int(attrs.get("perpage") or 0)
   search_url = config.get("search_url") or ""
@@ -1081,7 +1079,7 @@ def PrintShareButtons(config, output_file, P, article):
   if not button_names: return
   P('<div class="share_button_area">')
   P('<span class="share_button_container"><table><tr>')
-  dest_url = config["site_url"] + GetOutputFilename(article["name"])
+  dest_url = re.sub(r"/[^/]+$", "/", config["site_url"]) + GetOutputFilename(article["name"])
   lang = config["language"]
   for button_name in button_names:
     P('<td>')
