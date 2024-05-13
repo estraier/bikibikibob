@@ -33,15 +33,9 @@ import urllib.parse
 
 
 DATA_DIRS = [
-  # Label, local path, URL path, bbb.conf
-  #("input", "/home/www/myblog-input", "", "/home/www/myblog-input/bbb.conf"),
-  #("output", "/home/www/public/myblog", "/myblog", ""),
-  #("data", "/home/www/public/myblog/data", "/myblog/data", ""),
-  ("input", "input", "input", "bbb.conf"),
-  ("output", "output", "output", ""),
-  #("input", "/home/mikio/dev/bikibikibob/tutorial-ja-input", "", "/home/mikio/dev/bikibikibob/tutorial-ja-bbb.conf"),
-  #("output", "/home/mikio/public/bikibikibob/tutorial-ja", "/bikibikibob/tutorial-ja", ""),
-  #("data", "/home/mikio/public/bikibikibob/data", "/bikibikibob/data", ""),
+  # label, local path, URL path, bbb.conf path
+  ("input", "/home/mikio/myblog/input", "", "/home/mikio/myblog/input/bbb.conf"),
+  ("data", "/home/mikio/myblog/data", "/bikibikibob/myblog/data", ""),
 ]
 UPDATE_BBB_GENERATE = "bbb_generate.py"
 NUM_FILES_IN_PAGE = 100
