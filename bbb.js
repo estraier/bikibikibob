@@ -406,7 +406,7 @@ function update_comment_history(area, comments) {
   }
 }
 
-function do_search(elem) {
+function search_fulltext(elem) {
   let search_area = null;
   while (elem) {
     if (elem.className == "search_area") {
@@ -456,6 +456,7 @@ function do_search(elem) {
 }
 
 function update_search_result(result_area, docs) {
+  result_area.style.display = "block";
   if (docs.length < 1) {
     const search_result_message = document.createElement("div");
     search_result_message.className = "search_result_message";

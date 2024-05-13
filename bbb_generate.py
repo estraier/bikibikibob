@@ -1043,7 +1043,7 @@ def PrintSearch(config, P, params):
     P('<div>(@search: search_url is not set)</div>')
     return
   P('<div class="search_area" data-search-url="{}">', search_url)
-  P('<form class="search_form" onsubmit="do_search(this); return false;">')
+  P('<form class="search_form" onsubmit="search_fulltext(this); return false;">')
   P('<div class="search_line">')
   P('<span class="search_control">')
   P('<input type="text" class="search_query" value=""/>')
@@ -1056,7 +1056,7 @@ def PrintSearch(config, P, params):
   P('<option value="date">date asc</option>')
   P('<option value="date_r">date desc</option>')
   P('</select>')
-  P('<input type="button" class="search_search" value="search" onclick="do_search(this);"/>')
+  P('<input type="button" class="search_search" value="search" onclick="search_fulltext(this);"/>')
   P('</span>')
   P('</div>')
   P('</form>')

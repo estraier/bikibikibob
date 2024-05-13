@@ -749,7 +749,6 @@ div.search_area {
 div.search_area span.search_control {
     display: inline-block;
     padding: 0.5ex 0.8ex;
-    background: f8f8f8;
     background: #f8f8f8;
     border: solid 1px #eee;
     border-radius: 0.3ex;
@@ -758,11 +757,10 @@ div.search_area input.search_query {
     width: 30ex;
 }
 div.search_area div.search_result {
-    display: inline-block;
+    display: none;
     margin: 0.4ex 0 0 0;
-    padding: 0 0.8ex;
+    padding: 0 1.2ex;
     font-size: 90%;
-    background: f8f8f8;
     background: #f8f8f8;
     border: solid 1px #eee;
     border-radius: 0.3ex;
@@ -770,6 +768,9 @@ div.search_area div.search_result {
 div.search_area div.search_result_message {
     padding: 0 1ex;
     color: #888;
+}
+div.search_area div.search_result_item {
+    margin-top: 0.5ex;
 }
 div.search_area span.search_result_date {
     margin-left: 1ex;
@@ -779,6 +780,7 @@ div.search_area span.search_result_date {
 div.search_area div.search_result_snippet_list {
     margin-left: 2ex;
     font-size: 90%;
+    word-break: break-all;
 }
 div.search_area span.search_result_snippet_delim {
     font-size: 70%;
