@@ -294,18 +294,23 @@ article.main span.image_cell:hover span.image_caption {
 }
 article.main img.emb_image1 {
     max-width: 70%;
+    border-radius: 0.4ex;
 }
 article.main img.emb_image2 {
     max-width: 45%;
+    border-radius: 0.3ex;
 }
 article.main img.emb_image3 {
     max-width: 32%;
+    border-radius: 0.3ex;
 }
 article.main img.emb_image4 {
     max-width: 24%;
+    border-radius: 0.2ex;
 }
 article.main img.emb_image5 {
     max-width: 19%;
+    border-radius: 0.2ex;
 }
 
 /* videos */
@@ -351,18 +356,23 @@ article.main span.video_cell:hover span.video_caption {
 }
 article.main video.emb_video1 {
     max-width: 70%;
+    border-radius: 0.4ex;
 }
 article.main video.emb_video2 {
     max-width: 45%;
+    border-radius: 0.3ex;
 }
 article.main video.emb_video3 {
     max-width: 32%;
+    border-radius: 0.3ex;
 }
 article.main video.emb_video4 {
     max-width: 24%;
+    border-radius: 0.2ex;
 }
 article.main video.emb_video5 {
     max-width: 19%;
+    border-radius: 0.2ex;
 }
 
 /* youtube */
