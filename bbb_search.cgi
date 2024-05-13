@@ -23,11 +23,11 @@ import urllib
 import urllib.parse
 
 
-#HTML_DIR = "./output"
-HTML_DIR = "/home/mikio/public/bikibikibob/tutorial-ja"
+HTML_DIR = "."
 MAX_QUERIES = 10
 SNIPPET_WIDTH = 64
 NUM_SNIPPETS_PER_QUERY = 2
+CHECK_REFERRER = True
 
 
 def main():
@@ -36,6 +36,7 @@ def main():
   script_url += os.environ.get("HTTP_HOST" or "localhost")
   script_url += os.environ.get("REQUEST_URI" or "/bbb_comment.cgi")
   script_url = re.sub(r"\?.*", "", script_url)
+  referrer_url = os.environ.get("HTTP_REFERER", "")
   if script_filename:
     resource_dir = os.path.join(os.path.dirname(script_filename), HTML_DIR)
   else:
@@ -49,6 +50,12 @@ def main():
       params[key] = value[0].value
     else:
       params[key] = value.value
+  if CHECK_REFERRER and referrer_url:
+    script_parts = urllib.parse.urlparse(script_url)
+    referrer_parts = urllib.parse.urlparse(referrer_url)
+    if referrer_parts.netloc != script_parts.netloc:
+      PrintError(403, "Forbidden", "bad referrer")
+      return
   DoSearch(resource_dir, params)
 
 
