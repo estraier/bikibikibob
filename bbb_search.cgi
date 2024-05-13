@@ -272,6 +272,8 @@ def DoSearch(resource_dir, params):
     docs = sorted(docs, key=lambda x: (x["date"], x["name"]), reverse=True)
   else:
     docs = sorted(docs, key=lambda x: (-x["score"], x["name"]))
+  if p_max > 0 and len(docs) > p_max:
+    docs = docs[:p_max]
   for doc in docs:
     fields = []
     fields.append(doc["name"])

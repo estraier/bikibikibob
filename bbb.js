@@ -417,14 +417,16 @@ function search_fulltext(elem) {
   }
   if (!search_area) return;
   const search_url = search_area.dataset.searchUrl;
-  let query = search_area.getElementsByClassName("search_query")[0].value.trim();
-  let order = search_area.getElementsByClassName("search_order")[0].value.trim();
-  let result_area = search_area.getElementsByClassName("search_result")[0];
+  const max = search_area.dataset.searchMax;
+  const query = search_area.getElementsByClassName("search_query")[0].value.trim();
+  const order = search_area.getElementsByClassName("search_order")[0].value.trim();
+  const result_area = search_area.getElementsByClassName("search_result")[0];
   result_area.innerHTML = "";
   if (query.length == 0) {
     return;
   }
-  const request_url = search_url + "?query=" + encodeURI(query) + "&order=" + encodeURI(order);
+  const request_url = search_url + "?query=" + encodeURI(query) +
+        "&order=" + encodeURI(order) + "&max=" + max;
   const xhr = new XMLHttpRequest();
   xhr.onload = function() {
     if (xhr.status == 200) {

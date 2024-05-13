@@ -822,7 +822,8 @@ def ParseMetaParams(params):
     if match:
       attr_name = match.group(2).strip()
       attr_value = match.group(3).strip()
-      attrs[attr_name] = attr_value
+      if attr_name:
+        attrs[attr_name] = attr_value
       params = (match.group(1) + " " + match.group(4)).strip()
     else:
       break
@@ -1038,11 +1039,15 @@ def PrintCommentHistory(config, P, params):
 
 
 def PrintSearch(config, P, params):
+  attrs = ParseMetaParams(params)
+  print(params)
+  print(attrs)
+  max_num = int(attrs.get("max") or 0)
   search_url = config.get("search_url") or ""
   if not search_url:
     P('<div>(@search: search_url is not set)</div>')
     return
-  P('<div class="search_area" data-search-url="{}">', search_url)
+  P('<div class="search_area" data-search-url="{}" data-search-max="{}">', search_url, max_num)
   P('<form class="search_form" onsubmit="search_fulltext(this); return false;">')
   P('<div class="search_line">')
   P('<span class="search_control">')
