@@ -719,12 +719,41 @@ div.comment_area span#comment_message {
 
 /* comment history */
 div.comment_history_area {
+    position: relative;
     margin: 0.7ex 0.5ex;
     padding: 0;
     font-size: 80%;
     color: #333;
     border: 1px dashed #aaa;
     border-radius: 1ex;
+}
+div.comment_history_area div.history_meta {
+    margin: 0.2ex 1.5ex;
+}
+div.comment_history_area div.history_control {
+    position: absolute;
+    right: 0.5ex;
+    top: 0.2ex;
+}
+div.comment_history_area span.history_step {
+    display: inline-block;
+    width: 3ex;
+    margin: 0.2ex;
+    text-align: center;
+    border-radius: 1ex;
+    opacity: 0.5;
+}
+div.comment_history_area span.history_step_active {
+    background: #def;
+    border: solid 1px #adf;
+    cursor: pointer;
+}
+div.comment_history_area span.history_step_active:hover {
+    opacity: 1;
+}
+div.comment_history_area span.history_step_inactive {
+    background: #eee;
+    border: solid 1px #ddd;
 }
 div.comment_history_area ul {
     margin: 0;
@@ -768,16 +797,45 @@ div.search_area input.search_query {
 }
 div.search_area div.search_result {
     display: none;
+    position: relative;
     margin: 0.4ex 0 0 0;
     padding: 0 1.2ex;
     font-size: 90%;
-    background: #f8f8f8;
-    border: solid 1px #eee;
-    border-radius: 0.3ex;
+    border: 1px dashed #aaa;
+    border-radius: 1ex;
 }
-div.search_area div.search_result_message {
-    padding: 0 1ex;
-    color: #888;
+
+div.search_area div.search_meta {
+    margin: 0.2ex 0.2ex;
+    font-size: 80%;
+    color: #333;
+}
+div.search_area div.search_control {
+    position: absolute;
+    right: 0.5ex;
+    top: 0.2ex;
+    font-size: 80%;
+    color: #333;
+}
+div.search_area span.search_step {
+    display: inline-block;
+    width: 3ex;
+    margin: 0.2ex;
+    text-align: center;
+    border-radius: 1ex;
+    opacity: 0.5;
+}
+div.search_area span.search_step_active {
+    background: #def;
+    border: solid 1px #adf;
+    cursor: pointer;
+}
+div.search_area span.search_step_active:hover {
+    opacity: 1;
+}
+div.search_area span.search_step_inactive {
+    background: #eee;
+    border: solid 1px #ddd;
 }
 div.search_area div.search_result_item {
     margin-top: 0.5ex;
@@ -794,6 +852,10 @@ div.search_area div.search_result_snippet_list {
 }
 div.search_area span.search_result_snippet_delim {
     font-size: 70%;
+    color: #888;
+}
+div.search_area div.search_result_message {
+    padding: 0 1ex;
     color: #888;
 }
 

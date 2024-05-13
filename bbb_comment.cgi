@@ -366,7 +366,7 @@ def DoPostComment(resource_dir, comment_dir, params, remote_addr):
   print("Updated: " + p_resource)
 
 
-def ReadHistory(path, num_max):
+def ReadHistory(path):
   comments = []
   try:
     fd = os.open(path, os.O_RDONLY)
@@ -381,17 +381,18 @@ def ReadHistory(path, num_max):
   except:
     pass
   comments.reverse()
-  if num_max > 0 and len(comments) > num_max:
-    comments = comments[:num_max]
   return comments
 
 
 def DoListHistory(comment_dir, params):
   p_max = TextToInt(params.get("max") or "0")
   hist_path = os.path.join(comment_dir, HISTORY_FILE)
-  comments = ReadHistory(hist_path, p_max)
+  comments = ReadHistory(hist_path)
   print("Content-Type: text/plain; charset=UTF-8")
   print()
+  print("{}".format(len(comments)))
+  if p_max > 0 and len(comments) > p_max:
+    comments = comments[:p_max]
   for comment in comments:
     print("\t".join(comment))
 

@@ -337,12 +337,22 @@ function render_comment_history() {
   for (const area of document.getElementsByClassName("comment_history_area")) {
     const comment_url = area.dataset.commentUrl;
     const max = area.dataset.commentMax;
+    let perpage = area.dataset.commentPerpage;
+    if (perpage < 1) {
+      perpage = 100;
+    }
     const request_url = comment_url + "?action=list-history&max=" + max;
     const xhr = new XMLHttpRequest();
     xhr.onload = function() {
       if (xhr.status == 200) {
         const comments = [];
-        for (const line of xhr.responseText.split("\n")) {
+        const lines = xhr.responseText.split("\n");
+        if (lines.length < 1) {
+          return;
+        }
+        const num_comments = parseInt(lines[0]);
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
           const fields = line.split("\t");
           if (fields.length != 5) continue;
           const comment = {}
@@ -353,7 +363,7 @@ function render_comment_history() {
           comment.text = fields[4];
           comments.push(comment);
         }
-        update_comment_history(area, comments);
+        update_comment_history(area, num_comments, comments, perpage, 1);
       }
     };
     xhr.onerror = function() {
@@ -364,46 +374,84 @@ function render_comment_history() {
   }
 }
 
-function update_comment_history(area, comments) {
+function update_comment_history(area, num_comments, comments, perpage, page) {
   area.innerHTML = "";
-  if (comments.length > 0) {
-    const history_list = document.createElement("ul");
-    for (const comment of comments) {
-      const history_item = document.createElement("li");
-      history_item.className = "history_item";
-      const history_author = document.createElement("span");
-      history_author.className = "history_author";
-      history_author.textContent = comment.author;
-      history_item.insertBefore(history_author, null);
-      history_item.insertBefore(document.createTextNode(": "), null);
-      const history_text = document.createElement("span");
-      history_text.className = "history_text";
-      history_text.textContent = '"' + comment.text + '"';
-      history_item.insertBefore(history_text, null);
-      history_item.insertBefore(document.createTextNode(" - "), null);
-      const history_resource = document.createElement("a");
-      history_resource.className = "history_resource";
-      if (comment.title == "") {
-        history_resource.textContent = comment.resource;
-      } else {
-        history_resource.textContent = '"' + comment.title + '"';
-      }
-      history_resource.href = "./" + comment.resource + ".xhtml";
-      history_item.insertBefore(history_resource, null);
-      history_item.insertBefore(document.createTextNode(" - "), null);
-      const history_date = document.createElement("span");
-      history_date.className = "history_date";
-      history_date.textContent = comment.date;
-      history_item.insertBefore(history_date, null);
-      history_list.insertBefore(history_item, null);
-    }
-    area.insertBefore(history_list, null);
-  } else {
+  if (comments.length < 1) {
     const history_message = document.createElement("div");
     history_message.className = "history_message";
     history_message.textContent = "(no comments yet)";
     area.insertBefore(history_message, null);
+    return;
   }
+  const history_meta = document.createElement("div");
+  history_meta.className = "history_meta";
+  const history_num = document.createElement("span");
+  history_num.className = "history_num";
+  history_num.textContent = num_comments + " comments in history";
+  history_meta.insertBefore(history_num, null);
+  area.insertBefore(history_meta, null);
+  if (comments.length > perpage) {
+    const history_control = document.createElement("div");
+    history_control.className = "history_control";
+    const history_prev = document.createElement("span");
+    history_prev.className = "history_step";
+    if (page > 1) {
+      history_prev.classList.add("history_step_active");
+      history_prev.onclick = function() {
+        update_comment_history(area, num_comments, comments, perpage, page - 1);
+      }
+    } else {
+      history_prev.classList.add("history_step_inactive");
+    }
+    history_prev.textContent = "←";
+    history_control.insertBefore(history_prev, null);
+    const history_next = document.createElement("span");
+    history_next.className = "history_step";
+    if (page * perpage < comments.length ) {
+      history_next.classList.add("history_step_active");
+      history_next.onclick = function() {
+        update_comment_history(area, num_comments, comments, perpage, page + 1);
+      }
+    } else {
+      history_next.classList.add("history_step_inactive");
+    }
+    history_next.textContent = "→";
+    history_control.insertBefore(history_next, null);
+    area.insertBefore(history_control, null);
+  }
+  const history_list = document.createElement("ul");
+  let end_index = Math.min(page * perpage, comments.length);
+  for (let index = (page - 1) * perpage; index < end_index; index++) {
+    const comment = comments[index];
+    const history_item = document.createElement("li");
+    history_item.className = "history_item";
+    const history_author = document.createElement("span");
+    history_author.className = "history_author";
+    history_author.textContent = comment.author;
+    history_item.insertBefore(history_author, null);
+    history_item.insertBefore(document.createTextNode(": "), null);
+    const history_text = document.createElement("span");
+    history_text.className = "history_text";
+    history_text.textContent = '"' + comment.text + '"';
+    history_item.insertBefore(history_text, null);
+    history_item.insertBefore(document.createTextNode(" - "), null);
+    const history_resource = document.createElement("a");
+    history_resource.className = "history_resource";
+    if (comment.title == "") {
+      history_resource.textContent = comment.resource;
+    } else {
+      history_resource.textContent = '"' + comment.title + '"';
+    }
+    history_resource.href = "./" + comment.resource + ".xhtml";
+    history_item.insertBefore(history_resource, null);
+    history_item.insertBefore(document.createTextNode(" - "), null);
+    const history_date = document.createElement("span");
+    history_date.className = "history_date";
+    history_date.textContent = comment.date;
+    history_item.insertBefore(history_date, null);
+    history_list.insertBefore(history_item, null);
+  }
+  area.insertBefore(history_list, null);
 }
 
 function search_fulltext(elem) {
@@ -418,9 +466,14 @@ function search_fulltext(elem) {
   if (!search_area) return;
   const search_url = search_area.dataset.searchUrl;
   const max = search_area.dataset.searchMax;
+  let perpage = search_area.dataset.searchPerpage;
+  if (perpage < 1) {
+    perpage = 100;
+  }
   const query = search_area.getElementsByClassName("search_query")[0].value.trim();
   const order = search_area.getElementsByClassName("search_order")[0].value.trim();
   const result_area = search_area.getElementsByClassName("search_result")[0];
+  result_area.style.display = "none";
   result_area.innerHTML = "";
   if (query.length == 0) {
     return;
@@ -431,7 +484,13 @@ function search_fulltext(elem) {
   xhr.onload = function() {
     if (xhr.status == 200) {
       const docs = [];
-      for (const line of xhr.responseText.split("\n")) {
+      const lines = xhr.responseText.split("\n");
+      if (lines.length < 1) {
+        return;
+      }
+      const num_docs = parseInt(lines[0]);
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
         const fields = line.split("\t");
         if (fields.length < 4) continue;
         const snippets = [];
@@ -447,7 +506,7 @@ function search_fulltext(elem) {
         };
         docs.push(doc);
       }
-      update_search_result(result_area, docs);
+      update_search_result(result_area, num_docs, docs, perpage, 1);
     }
   };
   xhr.onerror = function() {
@@ -457,15 +516,55 @@ function search_fulltext(elem) {
   xhr.send();
 }
 
-function update_search_result(result_area, docs) {
+function update_search_result(result_area, num_docs, docs, perpage, page) {
   result_area.style.display = "block";
+  result_area.innerHTML = "";
   if (docs.length < 1) {
     const search_result_message = document.createElement("div");
     search_result_message.className = "search_result_message";
     search_result_message.textContent = "(no matching items)";
     result_area.insertBefore(search_result_message, null);
+    return;
   }
-  for (const doc of docs) {
+  const search_meta = document.createElement("div");
+  search_meta.className = "search_meta";
+  const search_num = document.createElement("span");
+  search_num.className = "search_num";
+  search_num.textContent = num_docs + " matching articles";
+  search_meta.insertBefore(search_num, null);
+  result_area.insertBefore(search_meta, null);
+  if (docs.length > perpage) {
+    const search_control = document.createElement("div");
+    search_control.className = "search_control";
+    const search_prev = document.createElement("span");
+    search_prev.className = "search_step";
+    if (page > 1) {
+      search_prev.classList.add("search_step_active");
+      search_prev.onclick = function() {
+        update_search_result(result_area, num_docs, docs, perpage, page - 1);
+      }
+    } else {
+      search_prev.classList.add("search_step_inactive");
+    }
+    search_prev.textContent = "←";
+    search_control.insertBefore(search_prev, null);
+    const search_next = document.createElement("span");
+    search_next.className = "search_step";
+    if (page * perpage < docs.length ) {
+      search_next.classList.add("search_step_active");
+      search_next.onclick = function() {
+        update_search_result(result_area, num_docs, docs, perpage, page + 1);
+      }
+    } else {
+      search_next.classList.add("search_step_inactive");
+    }
+    search_next.textContent = "→";
+    search_control.insertBefore(search_next, null);
+    result_area.insertBefore(search_control, null);
+  }
+  let end_index = Math.min(page * perpage, docs.length);
+  for (let index = (page - 1) * perpage; index < end_index; index++) {
+    const doc = docs[index];
     const search_result_item = document.createElement("div");
     search_result_item.className = "search_result_item";
     const title = doc.title.length > 0 ? doc.title : doc.name;
@@ -504,7 +603,6 @@ function update_search_result(result_area, docs) {
     }
     result_area.insertBefore(search_result_item, null);
   }
-
 }
 
 // END OF FILE

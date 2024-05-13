@@ -1030,12 +1030,14 @@ def PrintSiteToc(P, articles, params):
 def PrintCommentHistory(config, P, params):
   attrs = ParseMetaParams(params)
   max_num = int(attrs.get("max") or 0)
+  perpage = int(attrs.get("perpage") or 0)
   comment_url = config.get("comment_url") or ""
   if not comment_url:
     P('<div>(@comment-history: comment_url is not set)</div>')
     return
-  P('<div class="comment_history_area" data-comment-url="{}" data-comment-max="{}"></div>',
-    comment_url, max_num)
+  P('<div class="comment_history_area" data-comment-url="{}"'
+    ' data-comment-max="{}" data-comment-perpage="{}"></div>',
+    comment_url, max_num, perpage)
 
 
 def PrintSearch(config, P, params):
@@ -1043,11 +1045,14 @@ def PrintSearch(config, P, params):
   print(params)
   print(attrs)
   max_num = int(attrs.get("max") or 0)
+  perpage = int(attrs.get("perpage") or 0)
   search_url = config.get("search_url") or ""
   if not search_url:
     P('<div>(@search: search_url is not set)</div>')
     return
-  P('<div class="search_area" data-search-url="{}" data-search-max="{}">', search_url, max_num)
+  P('<div class="search_area" data-search-url="{}"'
+    ' data-search-max="{}" data-search-perpage="{}">',
+    search_url, max_num, perpage)
   P('<form class="search_form" onsubmit="search_fulltext(this); return false;">')
   P('<div class="search_line">')
   P('<span class="search_control">')
