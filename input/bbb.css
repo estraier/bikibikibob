@@ -628,6 +628,10 @@ article.main div.site_toc_area {
 article.main div.site_toc_area li {
     font-size: 95%;
 }
+article.main div.site_toc_area span.attrdate {
+    font-size: 80%;
+    color: #444;
+}
 
 /* share buttons */
 div.share_button_area {
@@ -1080,6 +1084,9 @@ div.search_area div.search_result_message {
     }
     article.main p.lv4 {
         margin-left: 4ex;
+    }
+    article.main ul {
+        margin-left: 2ex;
     }
     article.main img.emb_image1 {
         max-width: 90%;
