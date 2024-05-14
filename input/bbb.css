@@ -555,10 +555,11 @@ article.main hr {
     border: none;
 }
 article.main hr.hr0 {
-    margin-top: 1.5ex;
-    margin-bottom: 1.5ex;
+    margin-top: 1.0ex;
+    margin-bottom: 1.0ex;
     border-top: solid 1px #fff;
     width: 1%;
+    clear: both;
 }
 article.main hr.hr1 {
     margin-top: 1.5ex;
