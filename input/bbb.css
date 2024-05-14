@@ -1042,24 +1042,24 @@ div.search_area div.search_result_message {
         height: 340px;
     }
     article.main iframe.youtube2 {
-        width: 315px;
-        height: 200px;
+        width: 320px;
+        height: 210px;
     }
     article.main span.youtube_float {
-        width: 315px;
-        height: 200px;
+        width: 340px;
+        height: 220px;
     }
     article.main iframe.maps1 {
         width: 500px;
         height: 400px;
     }
     article.main iframe.maps2 {
-        width: 315px;
+        width: 320px;
         height: 240px;
     }
     article.main span.maps_float {
-        width: 315px;
-        height: 240px;
+        width: 340px;
+        height: 245px;
     }
 }
 
