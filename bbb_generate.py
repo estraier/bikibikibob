@@ -64,7 +64,7 @@ FACEBOOK_BUTTON_TEXT = """
 <script crossorigin="anonymous" src="https://connect.facebook.net/{locale}/sdk.js#xfbml=1&amp;version=v19.0" nonce="fxDGtCJR" async="async" defer="defer"></script>
 """
 HATENA_BUTTON_TEXT = """
-<span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" width="20" height="20" style="border: none;"/></a></span>
+<span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" loading="lazy" width="20" height="20" style="border: none;"/></a></span>
 <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async" defer="defer"></script>
 """
 
@@ -872,7 +872,7 @@ def PrintImage(P, params):
       if caption:
         P('<span class="image_caption image_caption2">{}</span>', caption, end="")
       P('<a href="{}">', url, end="")
-      P('<img src="{}" class="float_image"/>', url, end="")
+      P('<img src="{}" loading="lazy" class="float_image"/>', url, end="")
       P('</a>', end="")
       P('</span>')
       return
@@ -892,7 +892,7 @@ def PrintImage(P, params):
       P('<span class="image_caption image_caption{}">{}</span>',
         len(columns), caption, end="")
     P('<a href="{}">', url, end="")
-    P('<img src="{}" class="emb_image emb_image{}" style="{}"/>',
+    P('<img src="{}" loading="lazy" class="emb_image emb_image{}" style="{}"/>',
       url, len(columns), ";".join(styles), end="")
     P('</a>', end="")
     P('</span>')
@@ -968,7 +968,7 @@ def PrintYoutube(P, params):
       else:
         video_id = re.sub(r"[^_a-zA-Z0-9]", "", url)[:16]
       url = "https://www.youtube-nocookie.com/embed/" + video_id
-      P('<iframe src="{}" frameborder="0" class="youtube{}"></iframe>',
+      P('<iframe src="{}" loading="lazy" frameborder="0" class="youtube{}"></iframe>',
         url, len(columns), end="")
       P('</span>')
       return
@@ -994,7 +994,7 @@ def PrintYoutube(P, params):
     else:
       video_id = re.sub(r"[^_a-zA-Z0-9]", "", url)[:16]
     url = "https://www.youtube-nocookie.com/embed/" + video_id
-    P('<iframe src="{}" frameborder="0" class="youtube{}" style="{}"></iframe>',
+    P('<iframe src="{}" loading="lazy" frameborder="0" class="youtube{}" style="{}"></iframe>',
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
@@ -1023,7 +1023,7 @@ def PrintMaps(P, params):
       if zoom:
         url += "&z=" + zoom
       url += "&output=embed"
-      P('<iframe src="{}" frameborder="0" class="maps{}" style="{}"></iframe>',
+      P('<iframe src="{}" loading="lazy" frameborder="0" class="maps{}" style="{}"></iframe>',
         url, len(columns), ";".join(styles), end="")
       P('</span>')
       return
@@ -1047,7 +1047,7 @@ def PrintMaps(P, params):
     if zoom:
       url += "&z=" + zoom
     url += "&output=embed"
-    P('<iframe src="{}" frameborder="0" class="maps{}" style="{}"></iframe>',
+    P('<iframe src="{}" loading="lazy" frameborder="0" class="maps{}" style="{}"></iframe>',
       url, len(columns), ";".join(styles), end="")
     P('</span>')
   P('</div>')
