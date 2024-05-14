@@ -27,7 +27,7 @@ div.site_title_area h1 {
     margin: 0;
     padding: 0;
     text-align: center;
-    font-size: 110%;
+    font-size: 130%;
 }
 div.site_title_area h1 a {
     color: #000;
@@ -256,6 +256,7 @@ article.main div.image_area {
     margin: 0.8ex 0;
     padding: 0;
     width: 100%;
+    clear: both;
     text-align: center;
 }
 article.main span.image_cell {
@@ -312,12 +313,34 @@ article.main img.emb_image5 {
     max-width: 19%;
     border-radius: 0.2ex;
 }
+article.main span.image_float {
+    display: inline-block;
+    position: relative;
+    width: 48%;
+    clear: both;
+}
+article.main span.image_float_left {
+    float: left;
+    margin: 0.4ex 0.8ex 0.4ex 0;
+}
+article.main span.image_float_right {
+    float: right;
+    margin: 0.4ex 0ex 0.4ex 0.8;
+}
+article.main span.image_float img {
+    width: 100%;
+}
+article.main span.image_float:hover span.image_caption {
+    opacity: 0.2;
+    z-index: -1;
+}
 
 /* videos */
 article.main div.video_area {
     margin: 0.8ex 0;
     padding: 0;
     width: 100%;
+    clear: both;
     text-align: center;
 }
 article.main span.video_cell {
@@ -374,12 +397,34 @@ article.main video.emb_video5 {
     max-width: 19%;
     border-radius: 0.2ex;
 }
+article.main span.video_float {
+    display: inline-block;
+    position: relative;
+    width: 48%;
+    clear: both;
+}
+article.main span.video_float_left {
+    float: left;
+    margin: 0.4ex 0.8ex 0.4ex 0;
+}
+article.main span.video_float_right {
+    float: right;
+    margin: 0.4ex 0ex 0.4ex 0.8;
+}
+article.main span.video_float video {
+    width: 100%;
+}
+article.main span.video_float:hover span.video_caption {
+    opacity: 0.2;
+    z-index: -1;
+}
 
 /* youtube */
 article.main div.youtube_area {
     margin: 0.8ex 0;
     padding: 0;
     width: 100%;
+    clear: both;
     text-align: center;
 }
 article.main span.youtube_cell {
@@ -419,6 +464,7 @@ article.main div.maps_area {
     margin: 0.8ex 0;
     padding: 0;
     width: 100%;
+    clear: both;
     text-align: center;
 }
 article.main span.maps_cell {
@@ -451,6 +497,40 @@ article.main iframe.maps1 {
 }
 article.main iframe.maps2 {
     width: 48%;
+}
+
+/* horizontal lines */
+article.main hr {
+    margin: auto;
+    text-align: center;
+    border: none;
+}
+article.main hr.hr0 {
+    margin-top: 1.5ex;
+    margin-bottom: 1.5ex;
+    border-top: solid 1px #fff;
+    width: 1%;
+}
+article.main hr.hr1 {
+    margin-top: 1.5ex;
+    margin-bottom: 1.5ex;
+    border-top: solid 1px #aaa;
+    width: 50%;
+    clear: both;
+}
+article.main hr.hr2 {
+    margin-top: 2.0ex;
+    margin-bottom: 2.0ex;
+    border-top: solid 1px #666;
+    width: 75%;
+    clear: both;
+}
+article.main hr.hr3 {
+    margin-top: 3.0ex;
+    margin-bottom: 3.0ex;
+    border-top: solid 1px #333;
+    width: 100%;
+    clear: both;
 }
 
 /* site-level tags */

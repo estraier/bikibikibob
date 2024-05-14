@@ -311,6 +311,16 @@ def OrganizeSections(lines):
       sections.append(section)
       section_break = True
       continue
+    match = re.search(r"^-{2,5}$", line)
+    if match:
+      hr_lines = [line]
+      section = {
+        "type": "hr",
+        "lines": hr_lines,
+      }
+      sections.append(section)
+      section_break = True
+      continue
     if not section_break and sections and sections[-1]["type"] == "p":
       sections[-1]["lines"].append(line)
       continue
@@ -553,6 +563,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
       for i, line in enumerate(lines):
         P('{}', line)
       P('</pre>')
+    if elem_type == "hr":
+      level = len(lines[0]) - 2
+      P('<hr class="hr{}"/>', level)
     if elem_type == "meta":
       match = re.search("^@([-_a-z]+)(.*)$", lines[0])
       name = match.group(1)
@@ -841,8 +854,29 @@ def ParseMisc(misc):
 
 
 def PrintImage(P, params):
-  P('<div class="image_area">')
   columns = params.split("|")
+  if len(columns) == 1:
+    attrs = ParseMetaParams(columns[0])
+    float_dir = attrs.get("float")
+    if float_dir in ["left", "right"]:
+      attrs = ParseMetaParams(columns[0])
+      url = attrs[""]
+      caption = attrs.get("caption")
+      width = attrs.get("width")
+      styles = []
+      if width:
+        num_width = re.sub(r"[^0-9]", "", width)
+        if num_width:
+          styles.append("max-width: {}%".format(num_width))
+      P('<span class="image_float image_float_{}" style="{}">', float_dir, ";".join(styles))
+      if caption:
+        P('<span class="image_caption image_caption2">{}</span>', caption, end="")
+      P('<a href="{}">', url, end="")
+      P('<img src="{}" class="float_image"/>', url, end="")
+      P('</a>', end="")
+      P('</span>')
+      return
+  P('<div class="image_area">')
   for column in columns:
     attrs = ParseMetaParams(column)
     url = attrs[""]
@@ -866,8 +900,28 @@ def PrintImage(P, params):
 
 
 def PrintVideo(P, params):
-  P('<div class="video_area">')
   columns = params.split("|")
+  if len(columns) == 1:
+    attrs = ParseMetaParams(columns[0])
+    float_dir = attrs.get("float")
+    if float_dir in ["left", "right"]:
+      attrs = ParseMetaParams(columns[0])
+      url = attrs[""]
+      caption = attrs.get("caption")
+      width = attrs.get("width")
+      styles = []
+      if width:
+        num_width = re.sub(r"[^0-9]", "", width)
+        if num_width:
+          styles.append("max-width: {}%".format(num_width))
+      P('<span class="video_float video_float_{}" style="{}">', float_dir, ";".join(styles))
+      if caption:
+        P('<span class="video_caption image_caption2">{}</span>', caption, end="")
+      P('<video src="{}" controls="controls" preload="metadata" class="float_video"/>',
+        url, len(columns), end="")
+      P('</span>')
+      return
+  P('<div class="video_area">')
   for column in columns:
     attrs = ParseMetaParams(column)
     url = attrs[""]
@@ -890,8 +944,8 @@ def PrintVideo(P, params):
 
 
 def PrintYoutube(P, params):
-  P('<div class="youtube_area">')
   columns = params.split("|")
+  P('<div class="youtube_area">')
   for column in columns:
     attrs = ParseMetaParams(column)
     url = attrs[""]
@@ -920,8 +974,8 @@ def PrintYoutube(P, params):
 
 
 def PrintMaps(P, params):
-  P('<div class="maps_area">')
   columns = params.split("|")
+  P('<div class="maps_area">')
   for column in columns:
     attrs = ParseMetaParams(column)
     query = attrs[""]
