@@ -81,8 +81,14 @@ html {
   direction: ltr;
 }
 body {
+  margin: 0;
+  padding: 0;
+}
+article#main_pane {
   display: inline-block;
   width: 100%;
+  margin: 0;
+  padding: 0;
   text-align: left;
   line-height: 1.0;
 }
@@ -242,7 +248,7 @@ div.preview_edit_area span.control_cell {
   margin-left: 2ex;
 }
 div.preview_edit_area textarea.edit_data {
-  width: 97%;
+  width: 98%;
   height: 600px;
   font-size: 85%;
   word-break: break-all;
@@ -282,11 +288,29 @@ div.preview_confirm_area video.preview_data {
   max-height: 400px;
   overflow: hidden;
 }
+div.preview_edit_area {
+  position: relative;
+}
+div.preview_edit_area div.preview_open_button {
+  position: absolute;
+  right: 0;
+  padding: 0.2ex 1ex;
+  font-size: 100%;
+  color: #333;
+  background: #def;
+  border: 1pt solid #cde;
+  border-radius: 1ex;
+  cursor: pointer;
+  opacity: 0.5;
+}
+div.preview_edit_area div.preview_button:hover {
+  opacity: 1.0;
+}
 div#bbb_update_logs {
   display: none;
 }
 div#bbb_update_logs pre {
-  width: 97%;
+  width: 98%;
   margin: 0;
   padding: 0.2ex 0.5ex;
   max-height: 8em;
@@ -310,15 +334,45 @@ span#proc_message {
   border: 1pt solid #eed;
   border-radius: 1ex;
 }
+article#preview_pane {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 760px;
+  height: 100vh;
+  padding: 0;
+  border-left: 1pt solid #111;
+}
+article#preview_pane div.preview_close_button {
+  display: inline-block;
+  position: absolute;
+  right: 0;
+  width: 2ex;
+  text-align: center;
+  font-size: 130%;
+  color: #333;
+  cursor: pointer;
+  background: #ccc;
+  border: solid 1px #888;
+  opacity: 0.7;
+}
+article#preview_pane div.preview_close_button:hover {
+  opacity: 1.0;
+}
+article#preview_pane iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
 @media screen and (min-width:750px) {
   html {
     background: #eee;
   }
-  body {
-    display: inline-block;
+  article#main_pane {
     width: 700px;
     margin: 1ex 1ex;
-    padding: 1ex 2ex;
+    padding: 0ex 2ex 1ex 2ex;
     border: 1pt solid #ccc;
     border-radius: 1ex;
     text-align: left;
@@ -360,7 +414,6 @@ function check_upload() {
   }
   return true;
 }
-
 function show_proc_message(message) {
   const message_elem = document.getElementById("proc_message");
   message_elem.textContent = message;
@@ -376,7 +429,6 @@ function show_proc_message(message) {
     message_elem.style.display = "none";
   }, 3000);
 }
-
 function edit_save() {
   const form = document.getElementById("edit_form");
   const bbb_update_logs = document.getElementById("bbb_update_logs");
@@ -387,6 +439,7 @@ function edit_save() {
   const update_bbb = form.update_bbb.value;
   show_proc_message("saving the text ...");
   bbb_update_logs.style.display = "none";
+  bbb_update_logs.innerHTML = "";
   const script_url = document.location.toString().replace(/\?.*/, "");
   const params = [];
   params.push("action=edit");
@@ -440,6 +493,7 @@ function bbb_generate(dir, res) {
       const pre = document.createElement("pre");
       pre.textContent = xhr.responseText;
       bbb_update_logs.insertBefore(pre, null);
+      reload_preview();
     } else {
       show_proc_message("updating failed");
     }
@@ -451,15 +505,41 @@ function bbb_generate(dir, res) {
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
   xhr.send(joined_params);
 }
+function reload_preview() {
+  const preview_frame = document.getElementById("preview_frame");
+  if (!preview_frame.src || preview_frame.src.length < 1) return;
+  preview_frame.contentWindow.location.reload();
+}
 function go_back() {
   const back_url = document.location.toString().replace(/action=[-a-z]+/, "action=view");
   document.location = back_url;
 }
+function open_edit_preview() {
+  const page = document.documentElement;
+  const edit_form = document.getElementById("edit_form");
+  const preview_pane = document.getElementById("preview_pane");
+  const preview_frame = document.getElementById("preview_frame");
+  page.style.textAlign = "left";
+  preview_pane.style.display = "inline-block";
+  preview_frame.src = edit_form.dataset.generatedUrl;
+}
+function close_edit_preview() {
+  const page = document.documentElement;
+  const preview_pane = document.getElementById("preview_pane");
+  page.style.textAlign = "center";
+  preview_pane.style.display = "none";
+}
 /*]]>*/</script>
 </head>
 <body onload="main();">
+<article id="main_pane">
 """
 MAIN_FOOTER_TEXT = r"""
+</article>
+<article id="preview_pane">
+<div class="preview_close_button" onclick="close_edit_preview();">✕</div>
+<iframe id="preview_frame"></iframe>
+</article>
 </body>
 </html>
 """
@@ -1126,22 +1206,34 @@ def PrintEditPreview(params, data_dirs, script_url):
   if not stat.S_ISREG(st.st_mode):
     PrintError("preview failed: not a regular file")
     return
-  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
   ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
   if ext not in TEXT_EXTS:
     PrintError("preview failed: not a text file")
     return
   digest = ReadFileDigest(path)
+  is_article = UPDATE_BBB_GENERATE and dir_conf and ext == "art"
+  generated_url = ""
+  if is_article:
+    with open(dir_conf) as input_file:
+      for line in input_file:
+        line = line.strip()
+        match = re.search("^site_url:(.*)$", line)
+        if match:
+          generated_url = match.group(1).strip()
+          generated_url = re.sub(r"/$", "", generated_url) + "/" + urllib.parse.quote(p_res)
+          generated_url = re.sub(r"\.art$", ".xhtml", generated_url)
   P('<div class="preview_edit_area">')
+  if is_article:
+    P('<div class="preview_open_button" onclick="open_edit_preview();">preview</div>')
   P('<p>Edit the text content and save.</p>')
   P('<div class="preview_confirm_action">')
   P('<form name="edit_form" autocomplete="off" onsubmit="return false;" id="edit_form"'
-    ' data-dir="{}" data-res="{}" data-digest="{}">',
-    p_dir, p_res, digest)
+    ' data-dir="{}" data-res="{}" data-digest="{}" data-generated-url="{}">',
+    p_dir, p_res, digest, generated_url)
   P('<div class="control_row">')
   P('<input type="button" value="save" class="confirm_button" onclick="edit_save();"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
-  if UPDATE_BBB_GENERATE and dir_conf and ext == "art":
+  if is_article:
     P('<span class="control_cell">Update BBB: ', end="")
     P('<select name="update_bbb">', end="")
     for label, value in [("no", "no"), ("single", "single"), ("full", "full")]:
