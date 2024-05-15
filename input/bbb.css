@@ -555,29 +555,29 @@ article.main hr {
     border: none;
 }
 article.main hr.hr0 {
-    margin-top: 1.0ex;
-    margin-bottom: 1.0ex;
+    margin-top: 0.8ex;
+    margin-bottom: 0.8ex;
     border-top: solid 1px #fff;
     width: 1%;
     clear: both;
 }
 article.main hr.hr1 {
-    margin-top: 1.5ex;
-    margin-bottom: 1.5ex;
+    margin-top: 1.2ex;
+    margin-bottom: 1.2ex;
     border-top: solid 1px #aaa;
     width: 50%;
     clear: both;
 }
 article.main hr.hr2 {
-    margin-top: 2.0ex;
-    margin-bottom: 2.0ex;
+    margin-top: 1.8ex;
+    margin-bottom: 1.8ex;
     border-top: solid 1px #666;
     width: 75%;
     clear: both;
 }
 article.main hr.hr3 {
-    margin-top: 3.0ex;
-    margin-bottom: 3.0ex;
+    margin-top: 2.8ex;
+    margin-bottom: 2.8ex;
     border-top: solid 1px #333;
     width: 100%;
     clear: both;
