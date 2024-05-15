@@ -42,7 +42,8 @@ NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
 MAX_TOTAL_FILE_SIZE = 1024 * 1024 * 1024 * 16
 MAX_NUM_FILES = 8192
-MAX_TEXT_SIZE = 1024 * 1024 * 4
+MAX_TEXT_LENGTH = 1024 * 1024 * 4
+MAX_FILENAME_LENGTH = 256
 IGNORE_FILENAME_REGEXES = [
   r"^\.", r"\.(cgi)$", r"^(bbb)\.",
 ]
@@ -59,7 +60,9 @@ IMAGE_EXTS = [
 VIDEO_EXTS = [
   "mpg", "mpeg", "mp4", "mov", "qt", "wmv", "avi", "webm",
 ]
-MAIN_HEADER_TEXT = """
+CHECK_REFERRER = True
+CHECK_METHOD = True
+MAIN_HEADER_TEXT = r"""
 <?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
@@ -228,20 +231,6 @@ table.file_table td.preview video.preview_data {
 table.file_table td.prview span {
   color: #888;
 }
-pre.bbb_update, pre.failed_text {
-  width: 97%;
-  margin: 0;
-  padding: 0.2ex 0.5ex;
-  max-height: 8em;
-  font-size: 80%;
-  color: #888;
-  white-space: pre-wrap;
-  word-break: break-all;
-  background: #f8f8f8;
-  border: 1pt solid #ccc;
-  border-radius: 1ex;
-  overflow: scroll;
-}
 div.preview_edit_area {
   margin: 1ex 1ex;
 }
@@ -254,7 +243,7 @@ div.preview_edit_area span.control_cell {
 }
 div.preview_edit_area textarea.edit_data {
   width: 97%;
-  height: 500px;
+  height: 600px;
   font-size: 85%;
   word-break: break-all;
 }
@@ -292,6 +281,34 @@ div.preview_confirm_area video.preview_data {
   max-width: 100%;
   max-height: 400px;
   overflow: hidden;
+}
+div#bbb_update_logs {
+  display: none;
+}
+div#bbb_update_logs pre {
+  width: 97%;
+  margin: 0;
+  padding: 0.2ex 0.5ex;
+  max-height: 8em;
+  font-size: 80%;
+  color: #888;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f8f8f8;
+  border: 1pt solid #ccc;
+  border-radius: 1ex;
+  overflow: scroll;
+}
+span#proc_message {
+  display: none;
+  margin-left: 1.5ex;
+  padding: 0.2ex 1ex;
+  font-size: 85%;
+  font-family: monospace;
+  color: #555;
+  background: #ffe;
+  border: 1pt solid #eed;
+  border-radius: 1ex;
 }
 @media screen and (min-width:750px) {
   html {
@@ -343,6 +360,97 @@ function check_upload() {
   }
   return true;
 }
+
+function show_proc_message(message) {
+  const message_elem = document.getElementById("proc_message");
+  message_elem.textContent = message;
+  if (message) {
+    message_elem.style.display = "inline";
+  } else {
+    message_elem.style.display = "none";
+  }
+  if (message_elem.last_cleaner) {
+    clearTimeout(message_elem.last_cleaner);
+  }
+  message_elem.last_cleaner = setTimeout(function() {
+    message_elem.style.display = "none";
+  }, 3000);
+}
+
+function edit_save() {
+  const form = document.getElementById("edit_form");
+  const bbb_update_logs = document.getElementById("bbb_update_logs");
+  const dir = form.dataset.dir;
+  const res = form.dataset.res;
+  const digest = form.dataset.digest;
+  const text = form.text.value;
+  const update_bbb = form.update_bbb.value;
+  show_proc_message("saving the text ...");
+  bbb_update_logs.style.display = "none";
+  const script_url = document.location.toString().replace(/\?.*/, "");
+  const params = [];
+  params.push("action=edit");
+  params.push("dir=" + encodeURI(dir));
+  params.push("res=" + encodeURI(res));
+  params.push("digest=" + encodeURI(digest));
+  params.push("text=" + encodeURI(text));
+  const joined_params = params.join("&");
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      show_proc_message("saved successfully");
+      for (const line of xhr.responseText.split("\n")) {
+        match = line.match(/^digest=(.*)$/)
+        if (match) {
+          form.dataset.digest = match[1];
+        }
+      }
+      if (update_bbb == "single") {
+        bbb_generate(dir, res);
+      } else if (update_bbb == "full") {
+        bbb_generate(dir, "");
+      }
+    } else if (xhr.status == 409) {
+      show_proc_message("editing conflicted; please merge the edits");
+    } else {
+      show_proc_message("editing failed");
+    }
+  }
+  xhr.onerror = function() {
+    alert('networking error while editing the file');
+  }
+  xhr.open("POST", script_url, true);
+  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.send(joined_params);
+}
+function bbb_generate(dir, res) {
+  const bbb_update_logs = document.getElementById("bbb_update_logs");
+  show_proc_message("updating the BBB site ...");
+  const script_url = document.location.toString().replace(/\?.*/, "");
+  const params = [];
+  params.push("action=bbb-generate");
+  params.push("dir=" + encodeURI(dir));
+  params.push("res=" + encodeURI(res));
+  const joined_params = params.join("&");
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      show_proc_message("updated successfully");
+      bbb_update_logs.style.display = "block";
+      const pre = document.createElement("pre");
+      pre.textContent = xhr.responseText;
+      bbb_update_logs.insertBefore(pre, null);
+    } else {
+      show_proc_message("updating failed");
+    }
+  }
+  xhr.onerror = function() {
+    alert('networking error while updating the BBB site');
+  }
+  xhr.open("POST", script_url, true);
+  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.send(joined_params);
+}
 function go_back() {
   const back_url = document.location.toString().replace(/action=[-a-z]+/, "action=view");
   document.location = back_url;
@@ -351,7 +459,7 @@ function go_back() {
 </head>
 <body onload="main();">
 """
-MAIN_FOOTER_TEXT = """
+MAIN_FOOTER_TEXT = r"""
 </body>
 </html>
 """
@@ -360,15 +468,22 @@ MAIN_FOOTER_TEXT = """
 def main():
   request_method = os.environ.get("REQUEST_METHOD", "GET")
   script_filename = os.environ.get("SCRIPT_FILENAME", "")
-  script_url = os.environ.get("REQUEST_SCHEME" or "http") + "://"
-  script_url += os.environ.get("HTTP_HOST" or "localhost")
-  script_url += os.environ.get("REQUEST_URI" or "/bbb_comment.cgi")
+  script_url = os.environ.get("REQUEST_SCHEME", "http") + "://"
+  script_url += os.environ.get("HTTP_HOST", "localhost")
+  script_url += os.environ.get("REQUEST_URI", "/bbb_comment.cgi")
   script_url = re.sub(r"\?.*", "", script_url)
+  referrer_url = os.environ.get("HTTP_REFERER", "")
   base_dir = os.path.dirname(script_filename)
   data_dirs = []
   for label, path, url, conf in DATA_DIRS:
     path = os.path.join(base_dir, path)
     data_dirs.append((label, path, url, conf))
+  if CHECK_REFERRER and referrer_url:
+    script_parts = urllib.parse.urlparse(script_url)
+    referrer_parts = urllib.parse.urlparse(referrer_url)
+    if referrer_parts.netloc != script_parts.netloc:
+      PrintError(403, "Forbidden", "bad referrer")
+      return
   form = cgi.FieldStorage()
   params = {}
   for key in form.keys():
@@ -385,30 +500,32 @@ def main():
   if p_action == "download":
     ProcessDownload(params, data_dirs)
     return
-  print("Content-type: application/xhtml+xml")
+  if p_action == "edit":
+    if CHECK_METHOD and request_method != "POST":
+      SendError(403, "Forbidden", "bad method")
+    else:
+      ProcessEdit(params, data_dirs)
+    return
+  if p_action == "bbb-generate":
+    if CHECK_METHOD and request_method != "POST":
+      SendError(403, "Forbidden", "bad method")
+    else:
+      ProcessBBBGenerate(params, data_dirs)
+    return
+  print("Content-Type: application/xhtml+xml")
   print("")
   print(MAIN_HEADER_TEXT.strip())
   P('<h1><a href="{}">BikiBikiBob Manager</a></h1>', script_url)
   if p_action == "upload":
-    if request_method == "POST":
+    if CHECK_METHOD and request_method != "POST":
+      PrintError("bad method")
+    else:
       ProcessUpload(params, data_dirs)
-    else:
-      PrintError(403, "Forbidden", "bad method")
   if p_action == "remove":
-    if request_method == "POST":
+    if CHECK_METHOD and request_method != "POST":
+      PrintError("bad method")
+    else:
       ProcessRemoval(params, data_dirs)
-    else:
-      PrintError(403, "Forbidden", "bad method")
-  if p_action == "edit":
-    if request_method == "POST":
-      ok = ProcessEdit(params, data_dirs)
-      if not ok:
-        P('<pre class="failed_text">{}</pre>', params.get("text", ""))
-      if UPDATE_BBB_GENERATE and p_update_bbb and ok:
-        ProcessUpdateBBB(params, data_dirs)
-        p_action = "edit-preview"
-    else:
-      PrintError(403, "Forbidden", "bad method")
   PrintControl(params, data_dirs, script_url)
   if p_action == "edit-preview":
     PrintEditPreview(params, data_dirs, script_url)
@@ -470,18 +587,18 @@ def ReadFileDigest(path):
 
 def SendError(code, status, message):
   print("Status: {} {}".format(code, status))
-  print("Content-Type: text/plain")
+  print("Content-Type: text/plain; charset=UTF-8")
   print("")
   print(message)
 
 
 def ProcessDownload(params, data_dirs):
-  p_res = params.get("res", "")
   p_dir = TextToInt(params.get("dir", "1"))
+  p_res = params.get("res", "")
   if p_dir < 1 or p_dir > len(data_dirs):
     SendError(404, "Not Found", "invalid dir parameter")
     return
-  if p_res.find("/") >= 0:
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
     SendError(400, "Not Found", "invalid res parameter")
     return
   dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
@@ -543,6 +660,116 @@ def ProcessDownload(params, data_dirs):
     sys.stdout.flush()
 
 
+def ProcessEdit(params, data_dirs):
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_res = params.get("res", "")
+  p_digest = params.get("digest", "")
+  p_text = params.get("text")
+  if p_dir < 1 or p_dir > len(data_dirs):
+    SendError(404, "Not Found", "invalid dir parameter")
+    return
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
+    SendError(400, "Bad Parameter", "invalid res parameter")
+    return
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    SendError(404, "Not Found", "no such directory")
+    return
+  path = os.path.join(dir_path, p_res)
+  if not os.path.exists(path):
+    SendError(404, "Not Found", "no such file")
+    return
+  st = os.stat(path)
+  if not stat.S_ISREG(st.st_mode):
+    PrintError(403, "Forbidden", "not a regular file")
+    return
+  if p_text == None:
+    SendError(400, "Bad Parameter", "no text parameter")
+    return
+  p_text = p_text.replace("\r\n", "\n").replace("\r", "\n")
+  if len(p_text) > MAX_TEXT_LENGTH:
+    SendError(400, "Bad Parameter", "too larget text")
+    return
+  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
+  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
+  digest = ReadFileDigest(path)
+  if p_digest != digest:
+    SendError(409, "Conflict", "conflict with another edit")
+    return
+  if ext not in TEXT_EXTS:
+    SendError(400, "Bad Parameter", "not a text file")
+    return
+  try:
+    with open(path, "w") as out_file:
+      out_file.write(p_text)
+  except Exception as e:
+    SendError(500, "Internal Server Error", "writing failed: " + str(e))
+    return
+  print("Content-Type: text/plain; charset=UTF-8")
+  print("")
+  print('The file "{}" has been updated successfully.'.format(p_res))
+  new_digest = ReadFileDigest(path)
+  print('digest={}'.format(new_digest))
+
+
+def ProcessBBBGenerate(params, data_dirs):
+  p_dir = TextToInt(params.get("dir", "1"))
+  p_res = params.get("res", "")
+  if p_dir < 1 or p_dir > len(data_dirs):
+    SendError(404, "Not Found", "invalid dir parameter")
+    return
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
+    SendError(400, "Bad Parameter", "invalid res parameter")
+    return
+  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
+  if not os.path.isdir(dir_path):
+    SendError(404, "Not Found", "no such directory")
+    return
+  if not dir_conf:
+    SendError(403, "Forbidden", "no config is set")
+    return
+  if not os.path.isfile(dir_conf):
+    SendError(403, "Not Found", "missing config file")
+    return
+  if p_res:
+    ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1])
+    if ext != "art":
+      SendError(403, "Forbidden", "not an article file")
+      return
+    path = os.path.join(dir_path, p_res)
+    if not os.path.exists(path):
+      SendError(404, "Not Found", "no such file")
+      return
+    st = os.stat(path)
+    if not stat.S_ISREG(st.st_mode):
+      PrintError(403, "Forbidden", "not a regular file")
+      return
+  old_env_path = os.environ.get("PATH")
+  if old_env_path:
+    new_env_path = old_env_path + ":/usr/local/bin:."
+  else:
+    new_env_path = "/bin:/usr/bin:/usr/local/bin:."
+  os.environ["PATH"] = new_env_path
+  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
+  if p_res and p_res.find("'") < 0:
+    command += " '{}'".format(p_res)
+  try:
+    fd = os.open(dir_conf, os.O_RDONLY)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    output = subprocess.Popen(
+      command, stderr=subprocess.PIPE, shell=True).stderr.readlines()
+    os.close(fd)
+  except Exception as e:
+    SendError(500, "Internal Server Error", "generating failed: " + str(e))
+    return
+  print("Content-Type: text/plain; charset=UTF-8")
+  print()
+  for line in output:
+    line = line.decode()
+    line = line.replace("\t", "  ").rstrip()
+    print(line)
+
+
 def ProcessUpload(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
   p_file = params.get("file", b"")
@@ -586,6 +813,9 @@ def ProcessUpload(params, data_dirs):
     filename = p_newname
   else:
     filename = p_file_filename
+  if len(filename) > MAX_FILENAME_LENGTH:
+    PrintError("upload failed: too long filename")
+    return
   stem, ext = os.path.splitext(filename)
   if not stem:
     PrintError("upload failed: invalid filename")
@@ -627,14 +857,14 @@ def ProcessUpload(params, data_dirs):
 
 
 def ProcessRemoval(params, data_dirs):
-  p_res = params.get("res", "")
   p_dir = TextToInt(params.get("dir", "1"))
+  p_res = params.get("res", "")
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
   if p_dir < 1 or p_dir > len(data_dirs):
     PrintError("removal failed: invalid dir parameter")
     return
-  if p_res.find("/") >= 0:
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
     PrintError("removal failed: invalid res parameter")
     return
   dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
@@ -655,109 +885,6 @@ def ProcessRemoval(params, data_dirs):
     PrintError("removal failed: " + str(e))
     return
   PrintInfo('The file "{}" has been removed successfully.'.format(p_res))
-
-
-def ProcessEdit(params, data_dirs):
-  p_res = params.get("res", "")
-  p_digest = params.get("digest", "")
-  p_dir = TextToInt(params.get("dir", "1"))
-  p_order = params.get("order", "date_r").strip()
-  p_page = TextToInt(params.get("page", "1"))
-  p_text = params.get("text")
-  p_text = p_text.replace("\r\n", "\n").replace("\r", "\n")
-  if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("edit failed: invalid dir parameter")
-    return
-  if p_res.find("/") >= 0:
-    PrintError("edit failed: invalid res parameter")
-    return
-  if p_text == None:
-    PrintError("edit failed: no text parameter")
-    return
-  if len(p_text) > MAX_TEXT_SIZE:
-    PrintError("edit failed: too larget text")
-    return
-  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
-  if not os.path.isdir(dir_path):
-    PrintError("edit failed: no such directory")
-    return
-  path = os.path.join(dir_path, p_res)
-  if not os.path.exists(path):
-    PrintError("edit failed: no such file")
-    return
-  st = os.stat(path)
-  if not stat.S_ISREG(st.st_mode):
-    PrintError("edit failed: not a regular file")
-    return
-  url = re.sub(r"/$", "", dir_url) + "/" + urllib.parse.quote(p_res)
-  ext = re.sub(r"^\.", "", os.path.splitext(p_res)[1].lower())
-  digest = ReadFileDigest(path)
-  if p_digest != digest:
-    PrintError("edit failed: conflict with another edit")
-    return
-  if ext not in TEXT_EXTS:
-    PrintError("edit failed: not a text file")
-    return
-  try:
-    with open(path, "w") as out_file:
-      out_file.write(p_text)
-  except Exception as e:
-    PrintError("edit failed: " + str(e))
-    return
-  PrintInfo('The file "{}" has been updated successfully.'.format(p_res))
-  return True
-
-
-def ProcessUpdateBBB(params, data_dirs):
-  p_res = params.get("res", "")
-  p_dir = TextToInt(params.get("dir", "1"))
-  p_update_bbb = params.get("update_bbb", "").strip()
-  if not p_res:
-    PrintError("BBB failed: invalid res parameter")
-    return
-  if p_res.find("/") >= 0:
-    PrintError("BBB failed: invalid res parameter")
-    return
-  if p_dir < 1 or p_dir > len(data_dirs):
-    PrintError("BBB failed: invalid dir parameter")
-    return
-  dir_label, dir_path, dir_url, dir_conf = data_dirs[p_dir-1]
-  if not os.path.isdir(dir_path):
-    PrintError("BBB failed: no such directory")
-    return
-  if not dir_conf or not os.path.isfile(dir_conf):
-    PrintError("BBB failed: missing BBB config")
-    return
-  path = os.path.join(dir_path, p_res)
-  if not os.path.exists(path):
-    PrintError("BBB failed: no such file")
-    return
-  st = os.stat(path)
-  if not stat.S_ISREG(st.st_mode):
-    PrintError("BBB failed: not a regular file")
-    return
-  old_env_path = os.environ.get("PATH")
-  if old_env_path:
-    new_env_path = old_env_path + ":/usr/local/bin:."
-  else:
-    new_env_path = "/bin:/usr/bin:/usr/local/bin:."
-  os.environ["PATH"] = new_env_path
-  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
-  if p_update_bbb == "single" and p_res.find("'") < 0:
-    command += " '{}'".format(p_res)
-  PrintInfo('Running "{}".'.format(command))
-  try:
-    output = subprocess.Popen(
-      command, stderr=subprocess.PIPE, shell=True).stderr.readlines()
-  except Exception as e:
-    PrintError("edit failed: " + str(e))
-    return
-  P('<pre class="bbb_update">', end="")
-  for line in output:
-    line = line.decode()
-    line = line.replace("\t", "  ").rstrip()
-    P('{}', line)
-  P('</pre>')
 
 
 def PrintControl(params, data_dirs, script_url):
@@ -977,7 +1104,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   if not p_res:
     PrintError("preview failed: invalid res parameter")
     return
-  if p_res.find("/") >= 0:
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
     PrintError("preview failed: invalid res parameter")
     return
   if p_dir < 1 or p_dir > len(data_dirs):
@@ -1008,21 +1135,25 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('<div class="preview_edit_area">')
   P('<p>Edit the text content and save.</p>')
   P('<div class="preview_confirm_action">')
-  P('<form name="confirm_form" action="{}" method="POST" autocomplete="off">', script_url)
+  P('<form name="edit_form" autocomplete="off" onsubmit="return false;" id="edit_form"'
+    ' data-dir="{}" data-res="{}" data-digest="{}">',
+    p_dir, p_res, digest)
   P('<div class="control_row">')
-  P('<input type="submit" value="save" class="confirm_button"/>')
+  P('<input type="button" value="save" class="confirm_button" onclick="edit_save();"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
   if UPDATE_BBB_GENERATE and dir_conf and ext == "art":
     P('<span class="control_cell">Update BBB: ', end="")
     P('<select name="update_bbb">', end="")
-    for label, value in [("no", ""), ("single", "single"), ("full", "full")]:
+    for label, value in [("no", "no"), ("single", "single"), ("full", "full")]:
       P('<option value="{}"', value, end="")
       if p_update_bbb == value:
         P(' selected="selected"', end="")
       P('>{}</option>', label, end="")
     P('</select>')
     P('</span>')
+    P('<span id="proc_message"></span>')
   P('</div>')
+  P('<div class="control_row" id="bbb_update_logs"></div>')
   P('<div class="control_row">')
   P('<textarea name="text" class="edit_data">', end="")
   with open(path) as input_file:
@@ -1033,12 +1164,9 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('</textarea>')
   P('</div>')
   P('<div class="hidden_row">')
-  P('<input type="hidden" name="action" value="edit"/>')
+  P('<input type="hidden" name="dir" value="{}"/>', p_dir)
   P('<input type="hidden" name="res" value="{}"/>', p_res)
   P('<input type="hidden" name="digest" value="{}"/>', digest)
-  P('<input type="hidden" name="dir" value="{}"/>', p_dir)
-  P('<input type="hidden" name="order" value="{}"/>', p_order)
-  P('<input type="hidden" name="page" value="{}"/>', p_page)
   P('</div>')
   P('</form>')
   P('</div>')
@@ -1053,7 +1181,7 @@ def PrintRemovePreview(params, data_dirs, script_url):
   if not p_res:
     PrintError("preview failed: invalid res parameter")
     return
-  if p_res.find("/") >= 0:
+  if p_res.find("/") >= 0 or len(p_res) > MAX_FILENAME_LENGTH:
     PrintError("preview failed: invalid res parameter")
     return
   if p_dir < 1 or p_dir > len(data_dirs):
@@ -1080,15 +1208,15 @@ def PrintRemovePreview(params, data_dirs, script_url):
   P('<div class="preview_confirm_area">')
   P('<p>Do you really remove this file?</p>')
   P('<div class="preview_confirm_action">')
-  P('<form name="confirm_form" action="{}" method="POST" autocomplete="off">', script_url)
+  P('<form name="remove_form" action="{}" method="POST" autocomplete="off">', script_url)
   P('<div class="control_row">')
   P('<input type="submit" value="remove" class="confirm_button"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
   P('</div>')
   P('<div class="hidden_row">')
   P('<input type="hidden" name="action" value="remove"/>')
-  P('<input type="hidden" name="res" value="{}"/>', p_res)
   P('<input type="hidden" name="dir" value="{}"/>', p_dir)
+  P('<input type="hidden" name="res" value="{}"/>', p_res)
   P('<input type="hidden" name="order" value="{}"/>', p_order)
   P('<input type="hidden" name="page" value="{}"/>', p_page)
   P('</div>')

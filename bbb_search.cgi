@@ -61,7 +61,7 @@ def main():
 
 def PrintError(code, name, message):
   print("Status: {:d} {}".format(code, name))
-  print("Content-Type: text/plain")
+  print("Content-Type: text/plain; charset=UTF-8")
   print()
   print(message)
 

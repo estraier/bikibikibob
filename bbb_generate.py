@@ -26,7 +26,7 @@ import urllib
 import urllib.parse
 
 
-MAIN_HEADER_TEXT = """
+MAIN_HEADER_TEXT = r"""
 <?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="{lang}">
 <head>
@@ -43,27 +43,27 @@ MAIN_HEADER_TEXT = """
 <h1><a href="{site_url}">{site_title}</a></h1>{extra_site_title}
 </div>
 """
-MAIN_FOOTER_TEXT = """
+MAIN_FOOTER_TEXT = r"""
 </body>
 </html>
 """
-TWITTER_BUTTON_TEXT = """
+TWITTER_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;">
 <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-size="large" data-show-count="false"></a>
 </span>
 <script src="https://platform.twitter.com/widgets.js" charset="utf-8" async="async"></script>
 """
-LINE_BUTTON_TEXT = """
+LINE_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;">
 <div class="line-it-button" data-lang="{lang}" data-type="share-b" data-env="REAL" data-url="{url}" data-color="default" data-size="true" data-count="false" data-ver="3" style="display: none;"></div>
 </span>
 <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async" defer="defer"></script>
 """
-FACEBOOK_BUTTON_TEXT = """
+FACEBOOK_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;line-height:11px;"><div id="fb-root"></div><div class="fb-share-button" data-layout="box_count" data-href="{url}"></div></span>
 <script crossorigin="anonymous" src="https://connect.facebook.net/{locale}/sdk.js#xfbml=1&amp;version=v19.0" nonce="fxDGtCJR" async="async" defer="defer"></script>
 """
-HATENA_BUTTON_TEXT = """
+HATENA_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" loading="lazy" width="20" height="20" style="border: none;"/></a></span>
 <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async" defer="defer"></script>
 """
