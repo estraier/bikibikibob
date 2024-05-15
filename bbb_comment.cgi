@@ -45,9 +45,9 @@ CHECK_NONCE = True
 def main():
   request_method = os.environ.get("REQUEST_METHOD", "GET")
   script_filename = os.environ.get("SCRIPT_FILENAME", "")
-  script_url = os.environ.get("REQUEST_SCHEME" or "http") + "://"
-  script_url += os.environ.get("HTTP_HOST" or "localhost")
-  script_url += os.environ.get("REQUEST_URI" or "/bbb_comment.cgi")
+  script_url = os.environ.get("REQUEST_SCHEME", "http") + "://"
+  script_url += os.environ.get("HTTP_HOST", "localhost")
+  script_url += os.environ.get("REQUEST_URI", "/bbb_comment.cgi")
   script_url = re.sub(r"\?.*", "", script_url)
   referrer_url = os.environ.get("HTTP_REFERER", "")
   remote_addr = os.environ.get("REMOTE_ADDR", "")
@@ -58,6 +58,12 @@ def main():
     resource_dir = HTML_DIR
     comment_dir = COMMENT_DIR
   resource_dir = os.path.realpath(resource_dir)
+  if CHECK_REFERRER and referrer_url:
+    script_parts = urllib.parse.urlparse(script_url)
+    referrer_parts = urllib.parse.urlparse(referrer_url)
+    if referrer_parts.netloc != script_parts.netloc:
+      PrintError(403, "Forbidden", "bad referrer")
+      return
   form = cgi.FieldStorage()
   params = {}
   for key in form.keys():
@@ -67,12 +73,6 @@ def main():
     else:
       params[key] = value.value
   action = params.get("action") or ""
-  if CHECK_REFERRER and referrer_url:
-    script_parts = urllib.parse.urlparse(script_url)
-    referrer_parts = urllib.parse.urlparse(referrer_url)
-    if referrer_parts.netloc != script_parts.netloc:
-      PrintError(403, "Forbidden", "bad referrer")
-      return
   if action == "list-resources":
     DoListResources(resource_dir, params)
     return
