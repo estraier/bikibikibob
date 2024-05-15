@@ -116,8 +116,9 @@ def main(argv):
   MakeOutputDir(config, focus_stem_set)
   for article in articles:
     MakeArticle(config, articles, index, article)
-  MakeTagIndex(config, articles)
-  logger.info("Process done: elapsed_time={:.2f}s".format(time.time() - start_time))
+  if not focus_stem_set:
+    MakeTocFile(config, articles)
+  logger.info("Process done: elapsed_time={:.3f}s".format(time.time() - start_time))
 
 
 def ReadConfig(conf_path):
@@ -1333,7 +1334,7 @@ def PrintComments(config, P, article):
   P('</div>')
 
 
-def MakeTagIndex(config, articles):
+def MakeTocFile(config, articles):
   output_dir = config["output_dir"]
   toc_path = os.path.join(output_dir, "__toc__.tsv")
   with open(toc_path, "w") as output_file:
