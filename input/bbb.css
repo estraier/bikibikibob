@@ -11,6 +11,8 @@ html {
 }
 body {
     display: inline-block;
+    margin: 0;
+    padding: 0;
     text-align: left;
     line-height: 1.5;
 }
@@ -48,7 +50,9 @@ div.site_title_area div.subtitle {
 
 /* page title */
 article.main {
+    width: 100%;
     margin: 0 0 3ex 0;
+    overflow-x: clip;
     clear: both;
 }
 article.main div.page_title_area {
@@ -1079,6 +1083,10 @@ div.search_area div.search_result_message {
 
 /* for small screens */
 @media screen and (max-width:749px) {
+    body {
+       width: 95%;
+       padding: 0;
+    }
     article.main p {
         text-indent: 1.2ex;
     }
