@@ -968,6 +968,7 @@ def ProcessRemoval(params, data_dirs):
 
 
 def PrintControl(params, data_dirs, script_url):
+  p_action = params.get("action", "").strip()
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
@@ -999,41 +1000,42 @@ def PrintControl(params, data_dirs, script_url):
   P('</form>')
   P('</td>')
   P('</tr>')
-  P('<tr>')
-  P('<td class="label">Upload:</td>')
-  P('<td class="input">')
-  P('<form name="upload_form" action="{}" method="POST" enctype="multipart/form-data"'
-    ' autocomplete="off" onsubmit="return check_upload();">', script_url)
-  P('<div class="control_row">')
-  P('<input type="file" id="input_file" name="file"/>')
-  P('<select id="select_name" name="naming" onchange="adjust_control();">')
-  for label, value in [("name: local", "local"), ("name: date", "date"),
-                       ("name: assign", "assign"), ("empty file", "empty")]:
-    P('<option value="{}"', value, end="")
-    if p_naming == value: P(' selected="selected"', end="")
-    P('>{}</option>', label)
-  P('</select>')
-  P('<select name="overwrite">')
-  for label, value in [("overwrite: stop", "stop"), ("overwrite: rename", "rename"),
-                       ("overwrite: force", "force")]:
-    P('<option value="{}"', value, end="")
-    if p_overwrite == value: P(' selected="selected"', end="")
-    P('>{}</option>', label)
-  P('</select>')
-  P('<input type="submit" value="upload"/>')
-  P('</div>')
-  P('<div id="filename_row" class="hidden_row">')
-  P('Filename: <input type="input" id="input_filename" name="newname" value=""/>')
-  P('</div>')
-  P('<div class="hidden_row">')
-  P('<input type="hidden" name="action" value="upload"/>')
-  P('<input type="hidden" name="dir" value="{}"/>', p_dir)
-  P('<input type="hidden" name="order" value="{}"/>', p_order)
-  P('<input type="hidden" name="page" value="{}"/>', p_page)
-  P('</div>')
-  P('</form>')
-  P('</td>')
-  P('</tr>')
+  if p_action not in ["edit-preview", "remove-preview"]:
+    P('<tr>')
+    P('<td class="label">Upload:</td>')
+    P('<td class="input">')
+    P('<form name="upload_form" action="{}" method="POST" enctype="multipart/form-data"'
+      ' autocomplete="off" onsubmit="return check_upload();">', script_url)
+    P('<div class="control_row">')
+    P('<input type="file" id="input_file" name="file"/>')
+    P('<select id="select_name" name="naming" onchange="adjust_control();">')
+    for label, value in [("name: local", "local"), ("name: date", "date"),
+                         ("name: assign", "assign"), ("empty file", "empty")]:
+      P('<option value="{}"', value, end="")
+      if p_naming == value: P(' selected="selected"', end="")
+      P('>{}</option>', label)
+    P('</select>')
+    P('<select name="overwrite">')
+    for label, value in [("overwrite: stop", "stop"), ("overwrite: rename", "rename"),
+                         ("overwrite: force", "force")]:
+      P('<option value="{}"', value, end="")
+      if p_overwrite == value: P(' selected="selected"', end="")
+      P('>{}</option>', label)
+    P('</select>')
+    P('<input type="submit" value="upload"/>')
+    P('</div>')
+    P('<div id="filename_row" class="hidden_row">')
+    P('Filename: <input type="input" id="input_filename" name="newname" value=""/>')
+    P('</div>')
+    P('<div class="hidden_row">')
+    P('<input type="hidden" name="action" value="upload"/>')
+    P('<input type="hidden" name="dir" value="{}"/>', p_dir)
+    P('<input type="hidden" name="order" value="{}"/>', p_order)
+    P('<input type="hidden" name="page" value="{}"/>', p_page)
+    P('</div>')
+    P('</form>')
+    P('</td>')
+    P('</tr>')
   P('</table>')
   P('</div>')
 
