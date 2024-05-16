@@ -261,12 +261,12 @@ def OrganizeSections(lines):
       sections.append(section)
       section_break = True
       continue
-    match = re.search(r"^-+ ", line)
+    match = re.search(r"^[-+]+ ", line)
     if match:
       ul_lines = [line]
       while i < len(lines):
         line = lines[i]
-        if not re.search(r"^-+ ", line):
+        if not re.search(r"^[+-]+ ", line):
           break
         i += 1
         ul_lines.append(line)
@@ -479,15 +479,24 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         P('{}', text, end="")
         P('</' + elem + '>')
     if elem_type == "ul":
-      P('<ul>')
+      tag_stack = []
       for line in lines:
-        match = re.search("^(-+) +(.*)$", line)
+        match = re.search("^([-+]+) +(.*)$", line)
         level = min(len(match.group(1)), 3)
+        tag = "ol" if line.startswith("+") else "ul"
         text = match.group(2)
-        P('<li class="l{:d}">', level, end="")
+        while level < len(tag_stack):
+          last_tag = tag_stack.pop()
+          P('</' + last_tag + '>')
+        while level > len(tag_stack):
+          P('<' + tag + ' class="ul{:d}">', len(tag_stack) + 1)
+          tag_stack.append(tag)
+        P('<li class="li{:d}">', level, end="")
         PrintText(P, index, text.strip(), 1)
         P('</li>')
-      P('</ul>')
+      while tag_stack:
+        last_tag = tag_stack.pop()
+        P('</' + last_tag + '>')
     if elem_type == "table":
       P('<table>')
       for line in lines:

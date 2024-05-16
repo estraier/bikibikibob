@@ -112,18 +112,22 @@ article.main pre {
     border: solid 1px #eee;
     border-radius: 0.3ex;
 }
-article.main ul {
+article.main ul, article.main ol {
+    margin: 0;
+    padding: 0;
+}
+article.main ul.ul1, article.main ol.ul1 {
     margin: 0.8ex 0.5ex 0.8ex 5ex;
     padding: 0;
 }
-article.main li.l1 {
+article.main li.li1 {
     margin-left: 0ex;
 }
-article.main li.l2 {
+article.main li.li2 {
     margin-left: 3ex;
     font-size: 95%;
 }
-article.main li.l3 {
+article.main li.li3 {
     margin-left: 6ex;
     font-size: 90%;
 }
@@ -584,39 +588,39 @@ article.main hr.hr3 {
 }
 
 /* site-level tags */
-dl.site_tags_area {
+article.main dl.site_tags_area {
     margin: 0.8ex 0.5ex 0.8ex 0ex;
     padding: 0;
 }
-dl.site_tags_area dt.site_tags_name {
+article.main dl.site_tags_area dt.site_tags_name {
     display: list-item;
     margin-left: 3ex;
     list-style-type: disc;
 }
-dl.site_tags_area span.site_tags_count {
+article.main dl.site_tags_area span.site_tags_count {
     color: #555;
     font-size: 90%;
 }
-dl.site_tags_area dd.site_tags_resources {
+article.main dl.site_tags_area dd.site_tags_resources {
     display: list-item;
-    margin-left: 4ex;
+    margin-left: 3ex;
     list-style-type: none;
     font-size: 95%;
 }
 
 /* page-level table of contents */
-ul.page_toc_area {
+article.main ul.page_toc_area {
     margin: 0.8ex 0.5ex 0.8ex 5ex;
     padding: 0;
 }
-ul.page_toc_area li.pagetoc1 {
+article.main ul.page_toc_area li.pagetoc1 {
     margin-left: 0ex;
 }
-ul.page_toc_area li.pagetoc2 {
+article.main ul.page_toc_area li.pagetoc2 {
     margin-left: 3ex;
     font-size: 95%;
 }
-ul.page_toc_area li.pagetoc3 {
+article.main ul.page_toc_area li.pagetoc3 {
     margin-left: 6ex;
     font-size: 90%;
 }
@@ -625,7 +629,12 @@ ul.page_toc_area li.pagetoc3 {
 article.main div.site_toc_area {
     margin: 0.8ex 0;
 }
+article.main div.site_toc_area ul {
+    margin-left: 5ex;
+    padding: 0;
+}
 article.main div.site_toc_area li {
+    margin: 0;
     font-size: 95%;
 }
 article.main div.site_toc_area span.attrdate {
@@ -1085,7 +1094,19 @@ div.search_area div.search_result_message {
     article.main p.lv4 {
         margin-left: 4ex;
     }
-    article.main ul {
+    article.main ul.ul1, article.main ol.ul1 {
+        margin-left: 2ex;
+    }
+    article.main li.li2 {
+        margin-left: 2ex;
+    }
+    article.main li.li3 {
+        margin-left: 4ex;
+    }
+    article.main ul.page_toc_area {
+        margin-left: 2ex;
+    }
+    article.main div.site_toc_area ul {
         margin-left: 2ex;
     }
     article.main img.emb_image1 {
@@ -1099,6 +1120,15 @@ div.search_area div.search_result_message {
     }
     article.main td {
         padding: 0 0.3ex;
+    }
+    article.main dl.site_tags_area dt.site_tags_name {
+        margin-left: 2ex;
+    }
+    article.main dl.site_tags_area dd.site_tags_resources {
+        margin-left: 1.5ex;
+    }
+    div.comment_history_area li {
+        margin-left: 2ex;
     }
     div.step_link_area a.step_button {
         width: 14ex;
