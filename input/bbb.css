@@ -83,6 +83,9 @@ article.main div.article_date {
 }
 
 /* page content */
+article.main .long_expr {
+    word-break: break-all;
+}
 article.main h3 {
     margin: 1.8ex 0 1.1ex 0;
     padding: 0;

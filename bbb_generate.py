@@ -608,86 +608,6 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   print(MAIN_FOOTER_TEXT.strip(), file=output_file)
 
 
-def PrintRichPhrase(P, index, text):
-  text = re.sub(r"^\[(.*)\]$", "\1", text)
-  match = re.fullmatch(r"::\*(.*)\*::", text)
-  if match:
-    P('<b>{}</b>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::/(.*)/::", text)
-  if match:
-    P('<i>{}</i>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::_(.*)_::", text)
-  if match:
-    P('<u>{}</u>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::-(.*)-::", text)
-  if match:
-    P('<s>{}</s>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::#(.*)#::", text)
-  if match:
-    P('<kbd>{}</kbd>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::\^(.*)\^::", text)
-  if match:
-    P('<sup>{}</sup>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::~(.*)~::", text)
-  if match:
-    P('<sub>{}</sub>', match.group(1), end="")
-    return
-  match = re.fullmatch(r"::\((#?[0-9a-z]+)\):(.*)::", text)
-  if match:
-    P('<span style="color:{};">{}</span>', match.group(1), match.group(2), end="")
-    return
-  match = re.fullmatch(r"(.*?)\|(.*)", text)
-  if match:
-    face = match.group(1).strip()
-    dest = match.group(2).strip()
-  else:
-    face = text.strip()
-    dest = text.strip()
-  dest_url = ""
-  link_class = "internal"
-  if re.search(r"^https?://", dest):
-    dest_url = dest
-    link_class = "external"
-  elif dest.startswith("enwiki:"):
-    dest = dest[7:].strip()
-    if not dest and face:
-      dest = face
-    dest_url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(dest)
-    link_class = "external"
-  elif dest.startswith("jawiki:"):
-    dest = dest[7:].strip()
-    if not dest and face:
-      dest = face
-    dest_url = "https://ja.wikipedia.org/wiki/" + urllib.parse.quote(dest)
-    link_class = "external"
-  else:
-    match = re.search(r"(^[^#]*)#(.+)$", dest)
-    if match:
-      dest_title = match.group(1)
-      dest_fragment = match.group(2)
-    else:
-      dest_title = dest
-      dest_fragment = ""
-    if dest_title:
-      dest_article = index.get(dest_title.lower())
-      if dest_article:
-        dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
-        if dest_fragment:
-          dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
-    elif dest_fragment:
-      dest_url = "#" + EscapeHeaderId(dest_fragment)
-  if not dest_url:
-    logger.warning("invalid hyperlink: {}: {}".format(face, dest))
-    link_class = "dead"
-  P('<a href="{}" class="{}">{}</a>', dest_url, link_class, face, end="")
-
-
 def PrintText(P, index, text, depth):
   if depth > 10:
     P('{}', text, end="")
@@ -826,6 +746,8 @@ def PrintText(P, index, text, depth):
         if not dest_url:
           logger.warning("invalid hyperlink: {}: {}".format(face, dest))
           link_class = "dead"
+        if re.search(r"^https?://.{30,}", face):
+          link_class += " long_expr"
         P('<a href="{}" class="{}">', dest_url, link_class, end="")
         PrintText(P, index, face, depth + 1)
         P('</a>', end="")
