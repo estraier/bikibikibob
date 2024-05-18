@@ -975,7 +975,7 @@ def PrintControl(params, data_dirs, script_url):
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
-  p_naming = params.get("nameing", "local")
+  p_naming = params.get("naming", "local")
   p_overwrite = params.get("overwrite", "stop")
   P('<div class="control_area">')
   P('<table class="control_table">')
