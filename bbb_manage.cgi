@@ -443,10 +443,10 @@ function edit_save() {
   const script_url = document.location.toString().replace(/\?.*/, "");
   const params = [];
   params.push("action=edit");
-  params.push("dir=" + encodeURI(dir));
-  params.push("res=" + encodeURI(res));
-  params.push("digest=" + encodeURI(digest));
-  params.push("text=" + encodeURI(text));
+  params.push("dir=" + encodeURIComponent(dir));
+  params.push("res=" + encodeURIComponent(res));
+  params.push("digest=" + encodeURIComponent(digest));
+  params.push("text=" + encodeURIComponent(text));
   const joined_params = params.join("&");
   const xhr = new XMLHttpRequest();
   xhr.onload = function() {
@@ -482,8 +482,8 @@ function bbb_generate(dir, res) {
   const script_url = document.location.toString().replace(/\?.*/, "");
   const params = [];
   params.push("action=bbb-generate");
-  params.push("dir=" + encodeURI(dir));
-  params.push("res=" + encodeURI(res));
+  params.push("dir=" + encodeURIComponent(dir));
+  params.push("res=" + encodeURIComponent(res));
   const joined_params = params.join("&");
   const xhr = new XMLHttpRequest();
   xhr.onload = function() {
