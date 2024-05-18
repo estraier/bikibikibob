@@ -522,6 +522,9 @@ function open_edit_preview() {
   page.style.textAlign = "left";
   preview_pane.style.display = "inline-block";
   preview_frame.src = edit_form.dataset.generatedUrl;
+  if (preview_pane.clientWidth > screen.width) {
+    preview_pane.style.width = screen.width + "px";
+  }
 }
 function close_edit_preview() {
   const page = document.documentElement;
