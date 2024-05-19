@@ -388,15 +388,17 @@ function adjust_control() {
   const input_file = document.getElementById("input_file");
   const select_name = document.getElementById("select_name");
   const filename_row = document.getElementById("filename_row");
-  if (select_name.value == "assign" || select_name.value == "empty") {
-    filename_row.style.display = "block";
-  } else {
-    filename_row.style.display = "none";
-  }
-  if (select_name.value == "empty") {
-    input_file.disabled = "disabled";
-  } else {
-    input_file.disabled = null;
+  if (input_file) {
+    if (select_name.value == "assign" || select_name.value == "empty") {
+      filename_row.style.display = "block";
+    } else {
+      filename_row.style.display = "none";
+    }
+    if (select_name.value == "empty") {
+      input_file.disabled = "disabled";
+    } else {
+      input_file.disabled = null;
+    }
   }
 }
 function check_upload() {
@@ -437,6 +439,7 @@ function edit_save() {
   const digest = form.dataset.digest;
   const text = form.text.value;
   const update_bbb = form.update_bbb.value;
+  const hoard = form.hoard.checked;
   show_proc_message("saving the text ...");
   bbb_update_logs.style.display = "none";
   bbb_update_logs.innerHTML = "";
@@ -459,9 +462,9 @@ function edit_save() {
         }
       }
       if (update_bbb == "single") {
-        bbb_generate(dir, res);
+        bbb_generate(dir, res, hoard);
       } else if (update_bbb == "full") {
-        bbb_generate(dir, "");
+        bbb_generate(dir, "", hoard);
       }
     } else if (xhr.status == 409) {
       show_proc_message("editing conflicted; please merge the edits");
@@ -476,7 +479,7 @@ function edit_save() {
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
   xhr.send(joined_params);
 }
-function bbb_generate(dir, res) {
+function bbb_generate(dir, res, hoard) {
   const bbb_update_logs = document.getElementById("bbb_update_logs");
   show_proc_message("updating the BBB site ...");
   const script_url = document.location.toString().replace(/\?.*/, "");
@@ -484,6 +487,9 @@ function bbb_generate(dir, res) {
   params.push("action=bbb-generate");
   params.push("dir=" + encodeURIComponent(dir));
   params.push("res=" + encodeURIComponent(res));
+  if (hoard) {
+    params.push("hoard=true");
+  }
   const joined_params = params.join("&");
   const xhr = new XMLHttpRequest();
   xhr.onload = function() {
@@ -493,6 +499,7 @@ function bbb_generate(dir, res) {
       const pre = document.createElement("pre");
       pre.textContent = xhr.responseText;
       bbb_update_logs.insertBefore(pre, null);
+      update_edit_text();
       reload_preview();
     } else {
       show_proc_message("updating failed");
@@ -504,6 +511,29 @@ function bbb_generate(dir, res) {
   xhr.open("POST", script_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
   xhr.send(joined_params);
+}
+function update_edit_text() {
+  const form = document.getElementById("edit_form");
+  const dir = form.dataset.dir;
+  const res = form.dataset.res;
+  const script_url = document.location.toString().replace(/\?.*/, "");
+  const download_url = script_url + "?action=download" +
+    "&dir=" + encodeURIComponent(dir) + "&res=" + encodeURIComponent(res);
+  const xhr = new XMLHttpRequest();
+  xhr.onload = function() {
+    if (xhr.status == 200) {
+      form.text.value = xhr.responseText;
+      const digest = xhr.getResponseHeader("bbb-digest");
+      if (digest) {
+        form.dataset.digest = digest;
+      }
+    }
+  };
+  xhr.onerror = function() {
+    alert('networking error while getting new text');
+  };
+  xhr.open("GET", download_url, true);
+  xhr.send();
 }
 function reload_preview() {
   const preview_frame = document.getElementById("preview_frame");
@@ -626,6 +656,10 @@ def TextToInt(text):
     return 0
 
 
+def TextToBool(text):
+  return text and text.lower().strip() in ["1", "yes", "true", "on"]
+
+
 def esc(expr):
   if expr is None:
     return ""
@@ -732,8 +766,13 @@ def ProcessDownload(params, data_dirs):
     ctype = "video/x-msvideo"
   elif ext in VIDEO_EXTS:
     ctype = "video/" + ext
+  digest = ""
+  if dir_conf and ext == "art":
+    digest = ReadFileDigest(path)
   with open(path, "rb") as input_file:
     print("Content-Type: " + ctype)
+    if digest:
+      print("BBB-digest: " + digest)
     print("")
     sys.stdout.flush()
     while True:
@@ -798,6 +837,7 @@ def ProcessEdit(params, data_dirs):
 def ProcessBBBGenerate(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
   p_res = params.get("res", "")
+  p_hoard = TextToBool(params.get("hoard", ""))
   if p_dir < 1 or p_dir > len(data_dirs):
     SendError(404, "Not Found", "invalid dir parameter")
     return
@@ -834,6 +874,8 @@ def ProcessBBBGenerate(params, data_dirs):
     new_env_path = "/bin:/usr/bin:/usr/local/bin:."
   os.environ["PATH"] = new_env_path
   command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
+  if p_hoard:
+    command += " --hoard"
   if p_res and p_res.find("'") < 0:
     command += " '{}'".format(p_res)
   try:
@@ -1218,6 +1260,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   digest = ReadFileDigest(path)
   is_article = UPDATE_BBB_GENERATE and dir_conf and ext == "art"
   generated_url = ""
+  hoard_local_url = ""
   if is_article:
     with open(dir_conf) as input_file:
       for line in input_file:
@@ -1227,6 +1270,9 @@ def PrintEditPreview(params, data_dirs, script_url):
           generated_url = match.group(1).strip()
           generated_url = re.sub(r"/$", "", generated_url) + "/" + urllib.parse.quote(p_res)
           generated_url = re.sub(r"\.art$", ".xhtml", generated_url)
+        match = re.search("^hoard_local_url:(.*)$", line)
+        if match:
+          hoard_local_url = match.group(1).strip()
   P('<div class="preview_edit_area">')
   if is_article:
     P('<div class="preview_open_button" onclick="open_edit_preview();">preview</div>')
@@ -1242,12 +1288,13 @@ def PrintEditPreview(params, data_dirs, script_url):
     P('<span class="control_cell">Update BBB: ', end="")
     P('<select name="update_bbb">', end="")
     for label, value in [("no", "no"), ("single", "single"), ("full", "full")]:
-      P('<option value="{}"', value, end="")
-      if p_update_bbb == value:
-        P(' selected="selected"', end="")
-      P('>{}</option>', label, end="")
+      P('<option value="{}">{}</option>', value, label, end="")
     P('</select>')
     P('</span>')
+    if hoard_local_url:
+      P('<span class="control_cell">Hoard Embeds: ', end="")
+      P('<input type="checkbox" name="hoard"/>', end="")
+      P('</span>')
     P('<span id="proc_message"></span>')
   P('</div>')
   P('<div class="control_row" id="bbb_update_logs"></div>')
