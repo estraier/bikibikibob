@@ -24,6 +24,7 @@ import sys
 import time
 import urllib
 import urllib.parse
+import urllib.request
 
 
 MAIN_HEADER_TEXT = r"""
@@ -67,6 +68,27 @@ HATENA_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" loading="lazy" width="20" height="20" style="border: none;"/></a></span>
 <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async" defer="defer"></script>
 """
+MAX_HOARD_FILE_SIZE = 1024 * 1024 * 256
+MIME_EXTS = {
+  "application/octet-stream": "oct",
+  "application/xhtml+xml": "xhtml",
+  "application/xml": "xml",
+  "text/html": "html",
+  "text/xml": "xml",
+  "text/csv": "csv",
+  "text/plain": "txt",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/tiff": "tiff",
+  "image/svg+xml": "svg",
+  "image/heif": "heic",
+  "video/mpeg": "mpg",
+  "video/mp4": "mp4",
+  "video/quicktime": "mov",
+  "video/x-ms-wmv": "wmv",
+  "video/x-msvideo": "avi",
+}
 
 
 # Prepares the logger.
@@ -82,9 +104,11 @@ def main(argv):
     prog="bbb_generate.py", description="BBB HTML generator",
     formatter_class=argparse.RawDescriptionHelpFormatter)
   ap.add_argument("--conf", default="bbb.conf")
+  ap.add_argument("--hoard", action="store_true")
   ap.add_argument("articles", nargs="*")
   args = ap.parse_args(argv)
   conf_path = args.conf
+  with_hoard = args.hoard
   focus_names = args.articles
   focus_stem_set = set()
   for name in focus_names:
@@ -93,7 +117,7 @@ def main(argv):
       focus_stem_set.add(stem)
   start_time = time.time()
   logger.info("Process started: conf={}".format(conf_path))
-  config = ReadConfig(conf_path)
+  config = ReadConfig(conf_path, with_hoard)
   logger.info("Config: {}".format(str(config)))
   articles = ReadInputDir(config, focus_stem_set)
   if not articles:
@@ -114,6 +138,9 @@ def main(argv):
         index[title] = article
       count_index[title] = count
   MakeOutputDir(config, focus_stem_set)
+  if with_hoard:
+    for article in articles:
+      HoardDataAndRewriteArticle(config, article)
   for article in articles:
     MakeArticle(config, articles, index, article)
   if not focus_stem_set:
@@ -121,7 +148,7 @@ def main(argv):
   logger.info("Process done: elapsed_time={:.3f}s".format(time.time() - start_time))
 
 
-def ReadConfig(conf_path):
+def ReadConfig(conf_path, with_hoard):
   config = {}
   with open(conf_path) as input_file:
     for line in input_file:
@@ -130,7 +157,7 @@ def ReadConfig(conf_path):
       if not match: continue
       name = match.group(1).strip()
       value = match.group(2).strip()
-      if name in ["extra_meta", "share_button"]:
+      if name in ["extra_meta", "share_button", "hoard_target_url"]:
         if name not in config:
           config[name] = []
         config[name].append(value)
@@ -138,12 +165,22 @@ def ReadConfig(conf_path):
         config[name] = value
   base_dir = os.path.dirname(os.path.realpath(conf_path))
   config["input_dir"] = os.path.realpath(os.path.join(base_dir, config["input_dir"]))
+  if not os.path.isdir(config["input_dir"]): raise ValueError("input_dir is not a directory")
   config["output_dir"] = os.path.realpath(os.path.join(base_dir, config["output_dir"]))
   config["script_file"] = os.path.realpath(os.path.join(base_dir, config["script_file"]))
+  if not os.path.isfile(config["script_file"]): raise ValueError("script_file is not a file")
   config["style_file"] = os.path.realpath(os.path.join(base_dir, config["style_file"]))
+  if not os.path.isfile(config["style_file"]): raise ValueError("style_file is not a file")
   if not config["site_url"]: raise ValueError("empty site_url in the config")
   if not config["title"]: raise ValueError("empty title in the config")
   if not config["language"]: raise ValueError("empty language in the config")
+  if with_hoard:
+    if not config["hoard_target_url"]:
+      raise ValueError("empty hoard_target_url")
+    if not config["hoard_local_url"]: raise ValueError("empty hoard_local_url in the config")
+    config["hoard_data_dir"] = os.path.realpath(os.path.join(base_dir, config["hoard_data_dir"]))
+    if not os.path.isdir(config["hoard_data_dir"]):
+      raise ValueError("hoard_data_dir is not a directory")
   return config
 
 
@@ -368,6 +405,128 @@ def CutTextByWidth(text, width):
       break
     new_text += c
   return new_text
+
+
+def HoardDataAndRewriteArticle(config, article):
+  article_path = article["path"]
+  article_stem = article["stem"]
+  target_urls = config["hoard_target_url"]
+  local_url = config["hoard_local_url"]
+  data_dir = config["hoard_data_dir"]
+  input_lines = []
+  with open(article_path) as input_file:
+    for line in input_file:
+      line = re.sub(r"\s", " ", line.rstrip())
+      input_lines.append(line)
+  article_modified = False
+  output_lines = []
+  count_data = 0
+  for line in input_lines:
+    line_modified = False
+    match = re.search("^@(image|video) +(.*)$", line)
+    if match:
+      tag = match.group(1)
+      params = match.group(2)
+      columns = params.split("|")
+      mod_columns = []
+      for column in columns:
+        column_modified = False
+        attrs = ParseMetaParams(column)
+        url = attrs[""]
+        hit = False
+        if not url.startswith(local_url):
+          for target_url in target_urls:
+            if re.search(target_url, url):
+              hit = True
+        if hit:
+          logger.info("Fetcing data: {}: {}".format(article_stem, url))
+          count_data += 1
+          saved_filename = FetchDataByUrl(data_dir, article_stem, count_data, url)
+          if saved_filename:
+            new_url = re.sub(r"/[^/]+$", "/", local_url) + urllib.parse.quote(saved_filename)
+            if CheckDataByUrl(new_url):
+              url = new_url
+              column_modified = True
+        if column_modified:
+          column = "" + url
+          for name, value in attrs.items():
+            if not name: continue
+            column += " [{}={}]".format(name, value)
+          line_modified = True
+        mod_columns.append(column)
+      if line_modified:
+        line = "@" + tag + " " + " | ".join(mod_columns)
+        article_modified = True
+    output_lines.append(line)
+  if article_modified:
+    logger.info("Rewriting article: {}".format(article_path))
+    with open(article_path, "w") as output_file:
+      for line in output_lines:
+        print(line, file=output_file)
+
+
+def FetchDataByUrl(data_dir, article_stem, count_data, url):
+  try:
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+      info = response.info()
+      clen = int(info.get("Content-Length") or 0)
+      if clen < 1:
+        logger.info("Fetcing failed: empty data: {}: {}".format(article_stem, url))
+        return None
+      if clen > MAX_HOARD_FILE_SIZE:
+        logger.info("Fetcing failed: too large: {}: {}: {}".format(article_stem, url, clen))
+        return None
+      ctype = info.get("Content-Type") or ""
+      ctype = re.sub(r";.*", "", ctype).strip()
+      ext = MIME_EXTS.get(ctype)
+      if not ext:
+        ext = re.sub(r"^[^/]+/", "", ctype)
+        ext = re.sub(r".*\+/", "", ext)
+        ext = re.sub(r"[^a-z0-9]", "", ext)
+      if not ext:
+        ext = "unknown"
+      num_tries = 0
+      while True:
+        num_tries += 1
+        if num_tries > 1:
+          filename = "{}-{:03d}-{:03d}.{}".format(article_stem, count_data, num_tries, ext)
+        else:
+          filename = "{}-{:03d}.{}".format(article_stem, count_data, ext)
+        path = os.path.join(data_dir, filename)
+        if not os.path.exists(path): break
+      with open(path, "wb") as output_file:
+        while True:
+          buf = response.read(8192)
+          if len(buf) == 0: break
+          output_file.write(buf)
+      return filename
+  except urllib.error.URLError as e:
+    logger.info("Fetcing failed: URLError: {}: {}: {}".format(article_stem, url, str(e)))
+  except urllib.error.HTTPError as e:
+    logger.info("Fetcing failed: HTTPError: {}: {}: {}".format(article_stem, url, str(e)))
+  except Exception as e:
+    logger.info("Fetcing failed: Exception: {}: {}: {}".format(article_stem, url, str(e)))
+  return None
+
+
+def CheckDataByUrl(url):
+  try:
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+      info = response.info()
+      clen = int(info.get("Content-Length") or 0)
+      if clen < 1:
+        logger.info("Checking failed: empty data: {}".format(url))
+        return False
+      return True
+  except urllib.error.URLError as e:
+    logger.info("Checking failed: URLError: {}: {}".format(url, str(e)))
+  except urllib.error.HTTPError as e:
+    logger.info("Checking failed: HTTPError: {}: {}".format(url, str(e)))
+  except Exception as e:
+    logger.info("Checking failed: Exception: {}: {}".format(url, str(e)))
+  return False
 
 
 def MakeArticle(config, articles, index, article):
@@ -763,7 +922,7 @@ def PrintText(P, index, text, depth):
 def ParseMetaParams(params):
   attrs = {}
   while True:
-    match = re.search(r"^(.*)\[([a-z]+?)=(.*?)\](.*)$", params)
+    match = re.search(r"^(.*?)\[([a-z]+?)=(.*?)\](.*)$", params)
     if match:
       attr_name = match.group(2).strip()
       attr_value = match.group(3).strip()
