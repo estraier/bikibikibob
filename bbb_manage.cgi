@@ -713,7 +713,7 @@ def ProcessDownload(params, data_dirs):
   elif ext in ["gif"]:
     ctype = "image/gif"
   elif ext in ["tiff", "tif"]:
-    ctype = "image/gif"
+    ctype = "image/tiff"
   elif ext in ["svg"]:
     ctype = "image/svg+xml"
   elif ext in ["heic", "heif"]:
