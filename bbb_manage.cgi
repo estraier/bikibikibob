@@ -703,7 +703,7 @@ def ProcessDownload(params, data_dirs):
   elif ext in ["html", "htm"]:
     ctype = "text/html"
   elif ext in ["xml"]:
-    ctype = "text/html; charset=UTF-8"
+    ctype = "text/xml; charset=UTF-8"
   elif ext in TEXT_EXTS:
     ctype = "text/plain; charset=UTF-8"
   elif ext in ["jpg", "jpeg"]:
