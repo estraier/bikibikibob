@@ -34,18 +34,18 @@ MAIN_HEADER_TEXT = r"""
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="generator" content="BikiBikiBob"/>
-{extra_meta}
+{extra_head_lines}
 <title>{page_title}</title>
 <link rel="stylesheet" href="{style_file}"/>
 <script type="text/javascript" src="{script_file}"></script>
 </head>
-<body onload="main();">
+<body onload="main();">{extra_body_header_lines}
 <div class="site_title_area {site_title_subclass}">
 <h1><a href="{site_url}">{site_title}</a></h1>{extra_site_title}
 </div>
 """
 MAIN_FOOTER_TEXT = r"""
-</body>
+{extra_body_footer_lines}</body>
 </html>
 """
 TWITTER_BUTTON_TEXT = r"""
@@ -119,6 +119,7 @@ def main(argv):
   logger.info("Process started: conf={}".format(conf_path))
   config = ReadConfig(conf_path, with_hoard)
   logger.info("Config: {}".format(str(config)))
+  EnhanceConfig(config)
   articles = ReadInputDir(config, focus_stem_set)
   if not articles:
     raise ValueError("no input files")
@@ -164,6 +165,7 @@ def ReadConfig(conf_path, with_hoard):
       elif name:
         config[name] = value
   base_dir = os.path.dirname(os.path.realpath(conf_path))
+  config["base_dir"] = base_dir
   config["input_dir"] = os.path.realpath(os.path.join(base_dir, config["input_dir"]))
   if not os.path.isdir(config["input_dir"]): raise ValueError("input_dir is not a directory")
   config["output_dir"] = os.path.realpath(os.path.join(base_dir, config["output_dir"]))
@@ -182,6 +184,27 @@ def ReadConfig(conf_path, with_hoard):
     if not os.path.isdir(config["hoard_data_dir"]):
       raise ValueError("hoard_data_dir is not a directory")
   return config
+
+
+def EnhanceConfig(config):
+  def ReadHTMLFile(name):
+    path = os.path.join(config["base_dir"], name)
+    lines = []
+    with open(path) as input_file:
+      for line in input_file:
+        line = line.rstrip()
+        if not line: continue
+        lines.append(line)
+    return lines
+  extra_head_file = config.get("extra_head_file")
+  if extra_head_file:
+    config["extra_head_lines"] = ReadHTMLFile(extra_head_file)
+  extra_body_header_file = config.get("extra_body_header_file")
+  if extra_body_header_file:
+    config["extra_body_header_lines"] = ReadHTMLFile(extra_body_header_file)
+  extra_body_footer_file = config.get("extra_body_footer_file")
+  if extra_body_header_file:
+    config["extra_body_footer_lines"] = ReadHTMLFile(extra_body_footer_file)
 
 
 def ReadArticleMetadata(path):
@@ -590,30 +613,42 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   extra_site_title = ""
   if site_subtitle:
     extra_site_title = '\n<div class="subtitle">{}</div>'.format(esc(site_subtitle))
-  extra_meta = []
+  extra_head_lines = []
   if title:
-    extra_meta.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
+    extra_head_lines.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
   if date:
-    extra_meta.append('<meta name="x-bbb-date" content="{}"/>'.format(date))
+    extra_head_lines.append('<meta name="x-bbb-date" content="{}"/>'.format(date))
   if misc:
-    extra_meta.append('<meta name="x-bbb-misc" content="{}"/>'.format(misc))
+    extra_head_lines.append('<meta name="x-bbb-misc" content="{}"/>'.format(misc))
   for expr in config.get("extra_meta") or []:
     fields = expr.split("|", 1)
     if len(fields) != 2: continue
     meta_html = '<meta name="{}" content="{}"/>'.format(
       esc(fields[0].strip()), esc(fields[1].strip()))
-    extra_meta.append(meta_html)
+    extra_head_lines.append(meta_html)
+  if "extra_head_lines" in config:
+    extra_head_lines.extend(config["extra_head_lines"])
+  extra_body_header_lines = []
+  if "extra_body_header_lines" in config:
+    extra_body_header_lines.append("")
+    extra_body_header_lines.extend(config["extra_body_header_lines"])
+  extra_body_footer_lines = []
+  if "extra_body_footer_lines" in config:
+    extra_body_footer_lines.extend(config["extra_body_footer_lines"])
+    extra_body_footer_lines.append("")
+
   site_url = config["site_url"]
   main_header = MAIN_HEADER_TEXT.format(
     lang=esc(config["language"]),
-    extra_meta="\n".join(extra_meta),
+    extra_head_lines="\n".join(extra_head_lines),
     style_file=esc(os.path.basename(config["style_file"])),
     script_file=esc(os.path.basename(config["script_file"])),
     page_title=esc(page_title),
     site_title=esc(config["title"]),
     site_title_subclass=esc(site_title_subclass),
     extra_site_title=extra_site_title,
-    site_url=esc(site_url))
+    site_url=esc(site_url),
+    extra_body_header_lines="\n".join(extra_body_header_lines))
   print(main_header.strip(), file=output_file)
   P('<article class="main">')
   id_count_index = collections.defaultdict(int)
@@ -773,7 +808,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   PrintTags(config, P, article)
   PrintStepLinks(config, P, articles, article)
   PrintComments(config, P, article)
-  print(MAIN_FOOTER_TEXT.strip(), file=output_file)
+  main_footer = MAIN_FOOTER_TEXT.format(
+    extra_body_footer_lines="\n".join(extra_body_footer_lines))
+  print(main_footer.strip(), file=output_file)
 
 
 def PrintText(P, index, text, depth):
