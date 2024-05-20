@@ -37,7 +37,7 @@ DATA_DIRS = [
   ("input", "/home/mikio/myblog/input", "", "/home/mikio/myblog/input/bbb.conf"),
   ("data", "/home/mikio/myblog/data", "/bikibikibob/myblog/data", ""),
 ]
-UPDATE_BBB_GENERATE = "bbb_generate.py"
+BBB_GENERATE_COMMAND = "bbb_generate.py"
 NUM_FILES_IN_PAGE = 100
 MAX_FILE_SIZE = 1024 * 1024 * 256
 MAX_TOTAL_FILE_SIZE = 1024 * 1024 * 1024 * 16
@@ -429,7 +429,7 @@ function show_proc_message(message) {
   }
   message_elem.last_cleaner = setTimeout(function() {
     message_elem.style.display = "none";
-  }, 3000);
+  }, 5000);
 }
 function edit_save() {
   const form = document.getElementById("edit_form");
@@ -438,7 +438,7 @@ function edit_save() {
   const res = form.dataset.res;
   const digest = form.dataset.digest;
   const text = form.text.value;
-  const update_bbb = form.update_bbb.value;
+  const generate = form.generate.value;
   const hoard = form.hoard.checked;
   show_proc_message("saving the text ...");
   bbb_update_logs.style.display = "none";
@@ -461,13 +461,13 @@ function edit_save() {
           form.dataset.digest = match[1];
         }
       }
-      if (update_bbb == "single") {
+      if (generate == "single") {
         bbb_generate(dir, res, hoard);
-      } else if (update_bbb == "full") {
+      } else if (generate == "full") {
         bbb_generate(dir, "", hoard);
       }
     } else if (xhr.status == 409) {
-      show_proc_message("editing conflicted; please merge the edits");
+      show_proc_message("editing conflicted");
     } else {
       show_proc_message("editing failed");
     }
@@ -484,7 +484,7 @@ function bbb_generate(dir, res, hoard) {
   show_proc_message("updating the BBB site ...");
   const script_url = document.location.toString().replace(/\?.*/, "");
   const params = [];
-  params.push("action=bbb-generate");
+  params.push("action=generate");
   params.push("dir=" + encodeURIComponent(dir));
   params.push("res=" + encodeURIComponent(res));
   if (hoard) {
@@ -538,7 +538,7 @@ function update_edit_text() {
 function reload_preview() {
   const preview_frame = document.getElementById("preview_frame");
   if (!preview_frame.src || preview_frame.src.length < 1) return;
-  preview_frame.contentWindow.location.reload();
+  preview_frame.contentWindow.location.reload(true);
 }
 function go_back() {
   const back_url = document.location.toString().replace(/action=[-a-z]+/, "action=view");
@@ -609,7 +609,7 @@ def main():
     else:
       params[key] = value.value
   p_action = params.get("action", "").strip()
-  p_update_bbb = params.get("update_bbb", "").strip()
+  p_generate = params.get("generate", "").strip()
   if p_action == "download":
     ProcessDownload(params, data_dirs)
     return
@@ -619,11 +619,11 @@ def main():
     else:
       ProcessEdit(params, data_dirs)
     return
-  if p_action == "bbb-generate":
+  if p_action == "generate":
     if CHECK_METHOD and request_method != "POST":
       SendError(403, "Forbidden", "bad method")
     else:
-      ProcessBBBGenerate(params, data_dirs)
+      ProcessGenerate(params, data_dirs)
     return
   print("Content-Type: application/xhtml+xml")
   print("")
@@ -834,7 +834,7 @@ def ProcessEdit(params, data_dirs):
   print('digest={}'.format(new_digest))
 
 
-def ProcessBBBGenerate(params, data_dirs):
+def ProcessGenerate(params, data_dirs):
   p_dir = TextToInt(params.get("dir", "1"))
   p_res = params.get("res", "")
   p_hoard = TextToBool(params.get("hoard", ""))
@@ -873,7 +873,7 @@ def ProcessBBBGenerate(params, data_dirs):
   else:
     new_env_path = "/bin:/usr/bin:/usr/local/bin:."
   os.environ["PATH"] = new_env_path
-  command = "{} --conf {}".format(UPDATE_BBB_GENERATE, dir_conf)
+  command = "{} --conf {}".format(BBB_GENERATE_COMMAND, dir_conf)
   if p_hoard:
     command += " --hoard"
   if p_res and p_res.find("'") < 0:
@@ -1227,7 +1227,7 @@ def PrintEditPreview(params, data_dirs, script_url):
   p_dir = TextToInt(params.get("dir", "1"))
   p_order = params.get("order", "date_r").strip()
   p_page = TextToInt(params.get("page", "1"))
-  p_update_bbb = params.get("update_bbb", "").strip()
+  p_generate = params.get("generate", "").strip()
   if not p_res:
     PrintError("preview failed: invalid res parameter")
     return
@@ -1258,7 +1258,7 @@ def PrintEditPreview(params, data_dirs, script_url):
     PrintError("preview failed: not a text file")
     return
   digest = ReadFileDigest(path)
-  is_article = UPDATE_BBB_GENERATE and dir_conf and ext == "art"
+  is_article = BBB_GENERATE_COMMAND and dir_conf and ext == "art"
   generated_url = ""
   hoard_local_url = ""
   if is_article:
@@ -1285,14 +1285,14 @@ def PrintEditPreview(params, data_dirs, script_url):
   P('<input type="button" value="save" class="confirm_button" onclick="edit_save();"/>')
   P('<input type="button" value="cancel" class="confirm_button" onclick="go_back();"/>')
   if is_article:
-    P('<span class="control_cell">Update BBB: ', end="")
-    P('<select name="update_bbb">', end="")
+    P('<span class="control_cell">Generate: ', end="")
+    P('<select name="generate">', end="")
     for label, value in [("no", "no"), ("single", "single"), ("full", "full")]:
       P('<option value="{}">{}</option>', value, label, end="")
     P('</select>')
     P('</span>')
     if hoard_local_url:
-      P('<span class="control_cell">Hoard Embeds: ', end="")
+      P('<span class="control_cell">Hoard: ', end="")
       P('<input type="checkbox" name="hoard"/>', end="")
       P('</span>')
     P('<span id="proc_message"></span>')
