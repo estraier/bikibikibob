@@ -470,13 +470,15 @@ def FetchDataByUrl(data_dir, article_stem, count_data, url):
     req = urllib.request.Request(url)
     with urllib.request.urlopen(req) as response:
       info = response.info()
-      clen = int(info.get("Content-Length") or 0)
-      if clen < 1:
-        logger.info("Fetcing failed: empty data: {}: {}".format(article_stem, url))
-        return None
-      if clen > MAX_HOARD_FILE_SIZE:
-        logger.info("Fetcing failed: too large: {}: {}: {}".format(article_stem, url, clen))
-        return None
+      clen = info.get("Content-Length")
+      if clen != None:
+        clen = int(clen)
+        if clen < 1:
+          logger.info("Fetcing failed: empty data: {}: {}".format(article_stem, url))
+          return None
+        if clen > MAX_HOARD_FILE_SIZE:
+          logger.info("Fetcing failed: too large: {}: {}: {}".format(article_stem, url, clen))
+          return None
       ctype = info.get("Content-Type") or ""
       ctype = re.sub(r";.*", "", ctype).strip()
       ext = MIME_EXTS.get(ctype)
@@ -496,9 +498,16 @@ def FetchDataByUrl(data_dir, article_stem, count_data, url):
         path = os.path.join(data_dir, filename)
         if not os.path.exists(path): break
       with open(path, "wb") as output_file:
+        total_size = 0
         while True:
           buf = response.read(8192)
           if len(buf) == 0: break
+          total_size += len(buf)
+          if total_size > MAX_HOARD_FILE_SIZE:
+            logger.info("Fetcing failed: too large: {}: {}: {}".format(
+              article_stem, url, total_size))
+            os.remove(path)
+            return None
           output_file.write(buf)
       return filename
   except urllib.error.URLError as e:
