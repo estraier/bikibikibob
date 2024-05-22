@@ -45,7 +45,7 @@ MAX_NUM_FILES = 8192
 MAX_TEXT_LENGTH = 1024 * 1024 * 4
 MAX_FILENAME_LENGTH = 256
 IGNORE_FILENAME_REGEXES = [
-  r"^\.", r"\.(cgi)$", r"^(bbb)\.",
+  r"^\.", r"\.(cgi)$", r"^(bbb)[-_\W]",
 ]
 TEXT_EXTS = [
   "txt", "art", "cmt", "tsv", "csv", "json",
