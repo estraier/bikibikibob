@@ -68,6 +68,7 @@ HATENA_BUTTON_TEXT = r"""
 <span class="share_button" style="display:inline-box;"><a href="https://b.hatena.ne.jp/entry/" class="hatena-bookmark-button" data-hatena-bookmark-layout="vertical-normal" data-hatena-bookmark-lang="{lang}"><img src="https://b.st-hatena.com/images/v4/public/entry-button/button-only@2x.png" loading="lazy" width="20" height="20" style="border: none;"/></a></span>
 <script type="text/javascript" src="https://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async" defer="defer"></script>
 """
+MAX_DESCRIPTION_WIDTH = 160
 MAX_HOARD_FILE_SIZE = 1024 * 1024 * 256
 MIME_EXTS = {
   "application/octet-stream": "oct",
@@ -212,6 +213,8 @@ def ReadArticleMetadata(path):
   date = ""
   tags = ""
   misc = ""
+  top_image = ""
+  images = []
   with open(path) as input_file:
     end_pre_line = ""
     for line in input_file:
@@ -237,6 +240,16 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@misc +(.*)$", line)
       if match and not misc:
         misc = match.group(1).strip()
+      match = re.search(r"^@image +(.*)$", line)
+      if match:
+        columns = match.group(1).split("|")
+        for column in columns:
+          attrs = ParseMetaParams(column)
+          url = attrs[""]
+          if url:
+            images.append(url)
+            if attrs.get("top") and not top_image:
+              top_image = url
   if (date and not re.fullmatch(r"\d{4}/\d{2}/\d{2}", date) and
       not re.fullmatch(r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", date)):
     logger.warning("invalid date format: {}: {}".format(path, date))
@@ -246,6 +259,7 @@ def ReadArticleMetadata(path):
     "date": date,
     "tags": tags,
     "misc": misc,
+    "image": top_image,
   }
   return article
 
@@ -590,6 +604,140 @@ def NormalizeMetaText(text):
   return re.sub(r"\s+", " ", text).strip()
 
 
+def UnescapeText(text, depth):
+  if depth > 10:
+    return text
+  output = ""
+  while True:
+    idx = text.find("[")
+    if idx >= 0:
+      if idx > 0:
+        output += text[:idx]
+        text = text[idx:]
+      match = re.search("^\[\|\|(.*?)\|\|\]", text)
+      if match:
+        output += match.group(1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\*(.*?)\*\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[/(.*?)/\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[_(.*?)_\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[-(.*?)-\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[#(.*?)#\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\^(.*?)\^\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[,(.*?),\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[:(.*?):\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\.(.*?)\.\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[{(#?[A-Za-z0-9]+):(.*?)}\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\(([^:]+):(.*?)\)\]", text)
+      if match:
+        output += UnescapeText(match.group(1), depth + 1)
+        text = text[match.end():]
+        continue
+      match = re.search("^\[\[(.*?)\]\]", text)
+      if match:
+        content = match.group(1)
+        submatch = re.fullmatch(r"(.*?)\|(.*)", content)
+        if submatch:
+          face = submatch.group(1).strip()
+        else:
+          face = content.strip()
+        output += UnescapeText(face, depth + 1)
+        text = text[match.end():]
+        continue
+      output += "["
+      text = text[1:]
+    else:
+      output += text
+      break
+  return output
+
+
+def MakeDescription(sections):
+  desc_texts = []
+  for section in sections:
+    elem_type = section["type"]
+    lines = section["lines"]
+    if elem_type == "h":
+      for line in lines:
+        match = re.search("^(\*+) +(.*)$", line)
+        level = min(len(match.group(1)), 3)
+        text = match.group(2).strip()
+        if text:
+          desc_texts.append(text)
+    if elem_type == "p":
+      column_match = re.search(r"^\[!(.*?)!\](.*)$", lines[0])
+      if column_match:
+        caption = column_match.group(1)
+        lines[0] = column_match.group(2).strip()
+        if caption.startswith("~"):
+          caption = caption[1:]
+        text = UnescapeText(caption, 1)
+        if text:
+          desc_texts.append(text)
+        for line in lines:
+          text = UnescapeText(text, 1)
+          if text:
+            desc_texts.append(text)
+      else:
+        match = re.search(r"^(>+) +(.*)$", lines[0])
+        if match:
+          lines[0] = match.group(2).strip()
+        for line in lines:
+          text = UnescapeText(line, 1)
+          if text:
+            desc_texts.append(text)
+    if elem_type == "pre":
+      for line in lines:
+        text = UnescapeText(text, 1)
+        if text:
+          desc_texts.append(text)
+  joined = " ".join(desc_texts)
+  joined = re.sub(r"\s+", " ", joined).strip()
+  joined = CutTextByWidth(joined, MAX_DESCRIPTION_WIDTH)
+  return joined
+
+
 def PrintArticle(config, articles, index, article, sections, output_file):
   def P(*args, end="\n"):
     esc_args = []
@@ -626,6 +774,14 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     meta_html = '<meta name="{}" content="{}"/>'.format(
       esc(fields[0].strip()), esc(fields[1].strip()))
     extra_head_lines.append(meta_html)
+  description = MakeDescription(sections)
+  if description:
+    meta_html = '<meta property="og:description" content="{}"/>'.format(esc(description))
+    extra_head_lines.append(meta_html)
+  image = article.get("image")
+  if image:
+    meta_html = '<meta property="og:image" content="{}"/>'.format(esc(image))
+    extra_head_lines.append(meta_html)
   if "extra_head_lines" in config:
     extra_head_lines.extend(config["extra_head_lines"])
   extra_body_header_lines = []
@@ -636,7 +792,6 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if "extra_body_footer_lines" in config:
     extra_body_footer_lines.extend(config["extra_body_footer_lines"])
     extra_body_footer_lines.append("")
-
   site_url = config["site_url"]
   main_header = MAIN_HEADER_TEXT.format(
     lang=esc(config["language"]),
@@ -773,7 +928,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         P('</p>')
     if elem_type == "pre":
       P('<pre>', end="")
-      for i, line in enumerate(lines):
+      for line in lines:
         P('{}', line)
       P('</pre>')
     if elem_type == "hr":
@@ -975,8 +1130,15 @@ def ParseMetaParams(params):
       if attr_name:
         attrs[attr_name] = attr_value
       params = (match.group(1) + " " + match.group(4)).strip()
-    else:
-      break
+      continue
+    match = re.search(r"^(.*?)\[([a-z]+?)\](.*)$", params)
+    if match:
+      attr_name = match.group(2).strip()
+      if attr_name:
+        attrs[attr_name] = True
+      params = (match.group(1) + " " + match.group(3)).strip()
+      continue
+    break
   attrs[""] = params.strip()
   return attrs
 
