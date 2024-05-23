@@ -30,7 +30,7 @@ import urllib.request
 MAIN_HEADER_TEXT = r"""
 <?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="{lang}">
-<head>
+<head prefix="og: http://ogp.me/ns#">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="generator" content="BikiBikiBob"/>
@@ -746,6 +746,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         arg = esc(arg)
       esc_args.append(arg)
     print(args[0].format(*esc_args), end=end, file=output_file)
+  site_url = config["site_url"]
+  page_url = re.sub(r"/[^/]+$", "/", site_url)
+  page_url += urllib.parse.quote(GetOutputFilename(article["name"]))
   title = NormalizeMetaText(article.get("title") or "")
   date = NormalizeMetaText(article.get("date") or "")
   misc = NormalizeMetaText(article.get("misc") or "")
@@ -774,6 +777,15 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     meta_html = '<meta name="{}" content="{}"/>'.format(
       esc(fields[0].strip()), esc(fields[1].strip()))
     extra_head_lines.append(meta_html)
+  meta_html = '<meta property="og:url" content="{}"/>'.format(esc(page_url))
+  extra_head_lines.append(meta_html)
+  meta_html = '<meta property="og:title" content="{}"/>'.format(esc(title or site_title))
+  extra_head_lines.append(meta_html)
+  meta_html = '<meta property="og:site_name" content="{}"/>'.format(esc(site_title))
+  extra_head_lines.append(meta_html)
+  og_type = "article" if title else "website"
+  meta_html = '<meta property="og:type" content="{}"/>'.format(esc(og_type))
+  extra_head_lines.append(meta_html)
   description = MakeDescription(sections)
   if description:
     meta_html = '<meta property="og:description" content="{}"/>'.format(esc(description))
@@ -792,7 +804,6 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if "extra_body_footer_lines" in config:
     extra_body_footer_lines.extend(config["extra_body_footer_lines"])
     extra_body_footer_lines.append("")
-  site_url = config["site_url"]
   main_header = MAIN_HEADER_TEXT.format(
     lang=esc(config["language"]),
     extra_head_lines="\n".join(extra_head_lines),
@@ -811,10 +822,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if title or date:
     P('<div class="page_title_area">')
     if title:
-      page_url = article["name"]
-      page_url = GetOutputFilename(page_url)
-      P('<h2 class="article_title"><a href="{}">{}</a></h2>',
-        urllib.parse.quote(page_url), title)
+      P('<h2 class="article_title"><a href="{}">{}</a></h2>', page_url, title)
     if date:
       P('<div class="article_date">{}</div>', date)
     P('</div>')
@@ -1098,7 +1106,7 @@ def PrintText(P, index, text, depth):
           if dest_title:
             dest_article = index.get(dest_title.lower())
             if dest_article:
-              dest_url = GetOutputFilename("./" + urllib.parse.quote(dest_article["name"]))
+              dest_url = "./" + urllib.parse.quote(GetOutputFilename(dest_article["name"]))
               if dest_fragment:
                 dest_url = dest_url + "#" + EscapeHeaderId(dest_fragment)
           elif dest_fragment:
@@ -1369,7 +1377,7 @@ def PrintSiteTags(P, articles, params):
         P(', ', end="")
       name = article["name"]
       title = article.get("title") or article["stem"]
-      url = "./" + GetOutputFilename(name)
+      url = "./" + urllib.parse.quote(GetOutputFilename(name))
       P('<a href="{}" class="site_tags_link">{}</a>', url, title)
     P('</dd>')
   P('</dl>')
@@ -1418,7 +1426,7 @@ def PrintSiteToc(P, articles, params):
   P('<ul>')
   for article in articles:
     name = article["name"]
-    url = "./" + GetOutputFilename(name)
+    url = "./" + urllib.parse.quote(GetOutputFilename(name))
     title = article.get("title")
     if not title:
       title = article["stem"]
@@ -1484,7 +1492,8 @@ def PrintShareButtons(config, output_file, P, article):
   if not button_names: return
   P('<div class="share_button_area">')
   P('<span class="share_button_container"><table><tr>')
-  dest_url = re.sub(r"/[^/]+$", "/", config["site_url"]) + GetOutputFilename(article["name"])
+  dest_url = re.sub(r"/[^/]+$", "/", config["site_url"])
+  dest_url += urllib.parse.quote(GetOutputFilename(article["name"]))
   lang = config["language"]
   for button_name in button_names:
     P('<td>')
@@ -1572,7 +1581,7 @@ def PrintStepLinks(config, P, articles, article):
       next_expr = sibl_expr
   P('<div class="step_link_area">')
   if prev_article:
-    prev_url = GetOutputFilename(prev_article["name"])
+    prev_url = "./" + urllib.parse.quote(GetOutputFilename(prev_article["name"]))
     prev_title = prev_article.get("title")
     if not prev_title:
       prev_title = prev_article["stem"]
@@ -1581,17 +1590,17 @@ def PrintStepLinks(config, P, articles, article):
       prev_title = prev_title[:24] + "…"
     P('<a href="{}" class="step_button">←', prev_url, end="")
     if prev_title:
-      P('<br/><span class="step_title">{}</span>', prev_title)
+      P('<br/><span class="step_title">{}</span>', prev_title, end="")
     P('</a>')
   if next_article:
-    next_url = GetOutputFilename(next_article["name"])
+    next_url = "./" + urllib.parse.quote(GetOutputFilename(next_article["name"]))
     next_title = next_article.get("title")
     if not next_title:
       next_title = next_article["stem"]
     next_title = CutTextByWidth(next_title or "", 20)
     P('<a href="{}" class="step_button">→', next_url, end="")
     if next_title:
-      P('<br/><span class="step_title">{}</span>', next_title)
+      P('<br/><span class="step_title">{}</span>', next_title, end="")
     P('</a>')
   P('</div>')
 
