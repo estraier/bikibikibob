@@ -61,7 +61,7 @@ def main():
 
 def PrintError(code, name, message):
   print("Status: {:d} {}".format(code, name))
-  print("Content-Type: text/plain; charset=UTF-8")
+  print("Content-Type: text/plain")
   print()
   print(message)
 
@@ -112,13 +112,13 @@ def ReadXHTML(path):
         continue
       if in_article:
         text = line
-        text = re.sub(r"<(br)/>", " ", text)
-        text = re.sub(r"</(p|div|td)>", " ", text)
         if re.search('^<h2 .*class="article_title".*>.*</h2>', text): continue
         if re.search('^<div .*class="article_date".*>.*</div>', text): continue
         if re.search('^<li .*class="site_toc_item".*>.*</li>', text): continue
         if re.search('^<dt .*class="site_tags_name".*>.*</dt>', text): continue
         if re.search('^<a .*class="site_tags_link".*>.*</a>', text): continue
+        text = re.sub(r"<(br)/>", " ", text)
+        text = re.sub(r"</(p|div|td)>", " ", text)
         text = re.sub(r"<[^>]*?>", "", text)
         text = html.unescape(text)
         text = re.sub(r"\s+", " ", text).strip()
@@ -250,6 +250,24 @@ def DoSearch(resource_dir, params):
       if query_count > NUM_SNIPPETS_PER_QUERY: continue
       query_counts[query] = query_count
       chosen_snippets.append(text)
+    if not chosen_snippets:
+      text = re.sub(r"\s+", " ", " ".join(texts)).strip()
+      end_pos = 0
+      width = float(SNIPPET_WIDTH)
+      while end_pos < len(text) and width > 0:
+        end_pos += 1
+        cp = ord(text[end_pos-1])
+        if cp < 0x0200:
+          width -= 1.0
+        elif cp < 0x03000:
+          width -= 1.5
+        else:
+          width -= 2.0
+      cut_text = text[:end_pos]
+      if len(text) > end_pos:
+        cut_text += "..."
+      if cut_text:
+        chosen_snippets.append(cut_text)
     doc = {
       "name": stem,
       "title": title,
