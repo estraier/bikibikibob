@@ -974,7 +974,21 @@ def ProcessUpload(params, data_dirs):
       return
   try:
     with open(path, "wb") as out_file:
-      out_file.write(p_file)
+      if p_naming == "empty":
+        if filename.endswith(".art"):
+          out_file.write("@title \n".encode())
+          fm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})" +
+                         r"[ T]?(\d{2})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
+          hm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
+          if fm:
+            date = (fm.group(1) + "/" + fm.group(2) + "/" + fm.group(3) +
+                    " " + fm.group(4) + ":" + fm.group(5) + ":" + fm.group(6))
+            out_file.write(("@date " + date + "\n").encode())
+          elif hm:
+            date = hm.group(1) + "/" + hm.group(2) + "/" + hm.group(3)
+            out_file.write(("@date " + date + "\n").encode())
+      else:
+        out_file.write(p_file)
   except Exception as e:
     PrintError("upload failed: " + str(e))
     return
