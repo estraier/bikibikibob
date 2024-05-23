@@ -385,20 +385,29 @@ function main() {
   adjust_control();
 }
 function adjust_control() {
+  const form = document.getElementById("upload_form");
   const input_file = document.getElementById("input_file");
   const select_name = document.getElementById("select_name");
   const filename_row = document.getElementById("filename_row");
-  if (input_file) {
-    if (select_name.value == "assign" || select_name.value == "empty") {
-      filename_row.style.display = "block";
-    } else {
-      filename_row.style.display = "none";
-    }
-    if (select_name.value == "empty") {
-      input_file.disabled = "disabled";
-    } else {
-      input_file.disabled = null;
-    }
+  const input_filename = document.getElementById("input_filename");
+  if (!form) return;
+  if (select_name.value == "assign" || select_name.value == "empty") {
+    filename_row.style.display = "block";
+  } else {
+    filename_row.style.display = "none";
+  }
+  if (select_name.value == "empty") {
+    input_file.disabled = "disabled";
+  } else {
+    input_file.disabled = null;
+  }
+  if (select_name.value == "empty" && form.dataset.stepOrder == "date") {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const date = String(year) + month + day;
+    input_filename.value = date + ".art";
   }
 }
 function check_upload() {
@@ -439,7 +448,7 @@ function edit_save() {
   const digest = form.dataset.digest;
   const text = form.text.value;
   const generate = form.generate.value;
-  const hoard = form.hoard.checked;
+  const hoard = form.hoard && form.hoard.checked;
   show_proc_message("saving the text ...");
   bbb_update_logs.style.display = "none";
   bbb_update_logs.innerHTML = "";
@@ -1033,6 +1042,15 @@ def PrintControl(params, data_dirs, script_url):
   p_page = TextToInt(params.get("page", "1"))
   p_naming = params.get("naming", "local")
   p_overwrite = params.get("overwrite", "stop")
+  step_order = ""
+  dir_conf = p_dir <= len(data_dirs) and data_dirs[p_dir-1][3]
+  if dir_conf:
+    with open(dir_conf) as input_file:
+      for line in input_file:
+        line = line.strip()
+        match = re.search(r"^step_order: *(.*)$", line)
+        if match:
+          step_order = match.group(1)
   P('<div class="control_area">')
   P('<table class="control_table">')
   P('<tr>')
@@ -1064,7 +1082,9 @@ def PrintControl(params, data_dirs, script_url):
     P('<td class="label">Upload:</td>')
     P('<td class="input">')
     P('<form name="upload_form" action="{}" method="POST" enctype="multipart/form-data"'
-      ' autocomplete="off" onsubmit="return check_upload();">', script_url)
+      ' autocomplete="off" onsubmit="return check_upload();"'
+      ' id="upload_form" data-step-order="{}">',
+      script_url, step_order)
     P('<div class="control_row">')
     P('<input type="file" id="input_file" name="file"/>')
     P('<select id="select_name" name="naming" onchange="adjust_control();">')
