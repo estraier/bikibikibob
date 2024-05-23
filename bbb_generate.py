@@ -213,6 +213,7 @@ def ReadArticleMetadata(path):
   date = ""
   tags = ""
   misc = ""
+  desc = ""
   top_image = ""
   images = []
   with open(path) as input_file:
@@ -240,6 +241,9 @@ def ReadArticleMetadata(path):
       match = re.search(r"^@misc +(.*)$", line)
       if match and not misc:
         misc = match.group(1).strip()
+      match = re.search(r"^@desc +([^\s].*)$", line)
+      if match and not desc:
+        desc = match.group(1).strip()
       match = re.search(r"^@image +(.*)$", line)
       if match:
         columns = match.group(1).split("|")
@@ -253,12 +257,15 @@ def ReadArticleMetadata(path):
   if (date and not re.fullmatch(r"\d{4}/\d{2}/\d{2}", date) and
       not re.fullmatch(r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", date)):
     logger.warning("invalid date format: {}: {}".format(path, date))
+  if not top_image and images:
+    top_image = images[0]
   article = {
     "path": path,
     "title": title,
     "date": date,
     "tags": tags,
     "misc": misc,
+    "desc": desc,
     "image": top_image,
   }
   return article
@@ -764,6 +771,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   extra_site_title = ""
   if site_subtitle:
     extra_site_title = '\n<div class="subtitle">{}</div>'.format(esc(site_subtitle))
+  desc = NormalizeMetaText(article.get("desc") or "")
+  if not desc:
+    desc = MakeDescription(sections)
   extra_head_lines = []
   if title:
     extra_head_lines.append('<meta name="x-bbb-title" content="{}"/>'.format(title))
@@ -777,6 +787,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     meta_html = '<meta name="{}" content="{}"/>'.format(
       esc(fields[0].strip()), esc(fields[1].strip()))
     extra_head_lines.append(meta_html)
+  if desc:
+    meta_html = '<meta name="description" content="{}"/>'.format(esc(desc))
+    extra_head_lines.append(meta_html)
   meta_html = '<meta property="og:url" content="{}"/>'.format(esc(page_url))
   extra_head_lines.append(meta_html)
   meta_html = '<meta property="og:title" content="{}"/>'.format(esc(title or site_title))
@@ -786,9 +799,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   og_type = "article" if title else "website"
   meta_html = '<meta property="og:type" content="{}"/>'.format(esc(og_type))
   extra_head_lines.append(meta_html)
-  description = MakeDescription(sections)
-  if description:
-    meta_html = '<meta property="og:description" content="{}"/>'.format(esc(description))
+  if desc:
+    meta_html = '<meta property="og:description" content="{}"/>'.format(esc(desc))
     extra_head_lines.append(meta_html)
   image = article.get("image")
   if image:
@@ -964,7 +976,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         PrintCommentHistory(config, P, params)
       elif name == "search":
         PrintSearch(config, P, params)
-      elif name not in ["title", "date", "tags", "misc"]:
+      elif name not in ["title", "date", "tags", "misc", "desc"]:
         logger.warning("unknown meta directive: {}".format(name))
   P('</article>')
   PrintShareButtons(config, output_file, P, article)
