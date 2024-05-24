@@ -704,7 +704,7 @@ def MakeDescription(sections):
   desc_texts = []
   for section in sections:
     elem_type = section["type"]
-    lines = section["lines"]
+    lines = section["lines"][:]
     if elem_type == "h":
       for line in lines:
         match = re.search("^(\*+) +(.*)$", line)
