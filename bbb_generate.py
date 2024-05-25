@@ -1174,6 +1174,7 @@ def ParseMisc(misc):
 
 def PrintImage(P, params):
   columns = params.split("|")
+  is_frill = re.search(r"\W\[frill(=\w*)?\](\W|$)", params)
   if len(columns) == 1:
     attrs = ParseMetaParams(columns[0])
     float_dir = attrs.get("float")
@@ -1182,12 +1183,15 @@ def PrintImage(P, params):
       url = attrs[""]
       caption = attrs.get("caption")
       width = attrs.get("width")
+      css_classes = ["image_float", "image_float_" + float_dir]
+      if is_frill:
+        css_classes.append("image_frill")
       styles = []
       if width:
         num_width = re.sub(r"[^0-9]", "", width)
         if num_width:
           styles.append("max-width: {}%".format(num_width))
-      P('<span class="image_float image_float_{}" style="{}">', float_dir, ";".join(styles))
+      P('<span class="{}" style="{}">', " ".join(css_classes), ";".join(styles))
       if caption:
         P('<span class="image_caption image_caption2">{}</span>', caption, end="")
       P('<a href="{}">', url, end="")
@@ -1195,7 +1199,10 @@ def PrintImage(P, params):
       P('</a>', end="")
       P('</span>')
       return
-  P('<div class="image_area">')
+  css_classes = ["image_area"]
+  if is_frill:
+    css_classes.append("image_frill")
+  P('<div class="{}">', " ".join(css_classes))
   for column in columns:
     attrs = ParseMetaParams(column)
     url = attrs[""]
@@ -1220,6 +1227,7 @@ def PrintImage(P, params):
 
 def PrintVideo(P, params):
   columns = params.split("|")
+  is_frill = re.search(r"\W\[frill(=\w*)?\](\W|$)", params)
   if len(columns) == 1:
     attrs = ParseMetaParams(columns[0])
     float_dir = attrs.get("float")
@@ -1228,19 +1236,25 @@ def PrintVideo(P, params):
       url = attrs[""]
       caption = attrs.get("caption")
       width = attrs.get("width")
+      css_classes = ["video_float", "video_float_" + float_dir]
+      if is_frill:
+        css_classes.append("video_frill")
       styles = []
       if width:
         num_width = re.sub(r"[^0-9]", "", width)
         if num_width:
           styles.append("max-width: {}%".format(num_width))
-      P('<span class="video_float video_float_{}" style="{}">', float_dir, ";".join(styles))
+      P('<span class="{}" style="{}">', " ".join(css_classes), ";".join(styles))
       if caption:
         P('<span class="video_caption image_caption2">{}</span>', caption, end="")
       P('<video src="{}" controls="controls" preload="metadata" class="float_video"/>',
         url, len(columns), end="")
       P('</span>')
       return
-  P('<div class="video_area">')
+  css_classes = ["video_area"]
+  if is_frill:
+    css_classes.append("video_frill")
+  P('<div class="{}">', " ".join(css_classes))
   for column in columns:
     attrs = ParseMetaParams(column)
     url = attrs[""]

@@ -943,6 +943,7 @@ div.search_area {
     margin: 0.8ex 0;
     padding: 0;
     width: 100%;
+    clear: both;
 }
 div.search_area span.search_control {
     display: inline-block;
@@ -959,6 +960,7 @@ div.search_area div.search_result {
     position: relative;
     margin: 0.4ex 0 0 0;
     padding: 0 1.2ex;
+    clear: both;
     font-size: 90%;
     border: 1px dashed #aaa;
     border-radius: 1ex;
@@ -1131,6 +1133,12 @@ div.search_area div.search_result_message {
     article.main video.emb_video1 {
         max-width: 90%;
     }
+    article.main div.image_frill, article.main span.image_frill {
+        display: none;
+    }
+    article.main div.video_frill, article.main span.video_frill {
+        display: none;
+    }
     article.main table {
         font-size: 80%;
     }
@@ -1155,5 +1163,14 @@ div.search_area div.search_result_message {
     div.comment_area table {
         margin: 0.5ex 0.8ex;
         width: 90%;
+    }
+    div.search_area input.search_query {
+        width: 20ex;
+    }
+    div.search_area select.search_order {
+        font-size: 90%;
+    }
+    div.search_area input.search_search {
+        font-size: 90%;
     }
 }
