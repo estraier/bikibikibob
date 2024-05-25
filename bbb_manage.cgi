@@ -1016,7 +1016,6 @@ def WriteArticleTemplate(output_file, dir_conf, filename):
   elif hm:
     date = hm.group(1) + "/" + hm.group(2) + "/" + hm.group(3)
     P("@date {}", date)
-
   output_dir = ""
   with open(dir_conf) as input_file:
     for line in input_file:
