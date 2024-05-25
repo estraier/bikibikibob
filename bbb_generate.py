@@ -1665,7 +1665,7 @@ def MakeTocFile(config, articles):
       date = (article.get("date") or "")[:32]
       tags = ParseMisc(article.get("tags") or "")
       print("{}\t{}\t{}\t{}".format(
-        stem, short_title, date, "\t".join(tags)),
+        stem, short_title, date, ", ".join(tags)),
             file=output_file)
 
 

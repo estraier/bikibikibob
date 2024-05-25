@@ -64,8 +64,10 @@ function search_tags(tag_elem) {
       for (const line of xhr.responseText.split("\n")) {
         const fields = line.split("\t");
         if (fields.length < 3) continue;
-        for (let i = 3; i < fields.length; i++) {
-          if (fields[i] == tag) {
+        const res_tags = fields[3].split(",");
+        for (let res_tag of res_tags) {
+          res_tag = res_tag.trim();
+          if (res_tag == tag) {
             const resource = {};
             resource.name = fields[0];
             resource.title = fields[1];
@@ -83,6 +85,7 @@ function search_tags(tag_elem) {
     alert('networking error while getting tag index');
   };
   xhr.open("GET", index_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
 }
 
@@ -132,6 +135,7 @@ function check_comments() {
     alert('networking error while counting comments');
   };
   xhr.open("GET", request_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
 }
 
@@ -181,6 +185,7 @@ function render_comments() {
     alert('networking error while getting comments');
   };
   xhr.open("GET", request_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
   const author_elem = document.getElementById("comment_author");
   if (author_elem.value.length == 0) {
@@ -270,6 +275,7 @@ function post_comment() {
     alert('networking error while checking the nonce');
   };
   xhr.open("GET", request_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
 }
 
@@ -304,6 +310,7 @@ function post_comment_second(comment_url, resource, author, text, nonce) {
   }
   xhr.open("POST", comment_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send(joined_params);
 }
 
@@ -370,6 +377,7 @@ function render_comment_history() {
       alert('networking error while getting comment history');
     };
     xhr.open("GET", request_url, true);
+    xhr.setRequestHeader("Cache-Control", "no-cache");
     xhr.send();
   }
 }
@@ -513,6 +521,7 @@ function search_fulltext(elem) {
     alert('networking error while getting comment history');
   };
   xhr.open("GET", request_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
 }
 

@@ -15,6 +15,7 @@
 
 
 import cgi
+import collections
 import datetime
 import dateutil.tz
 import fcntl
@@ -486,6 +487,7 @@ function edit_save() {
   }
   xhr.open("POST", script_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send(joined_params);
 }
 function bbb_generate(dir, res, hoard) {
@@ -519,6 +521,7 @@ function bbb_generate(dir, res, hoard) {
   }
   xhr.open("POST", script_url, true);
   xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send(joined_params);
 }
 function update_edit_text() {
@@ -542,6 +545,7 @@ function update_edit_text() {
     alert('networking error while getting new text');
   };
   xhr.open("GET", download_url, true);
+  xhr.setRequestHeader("Cache-Control", "no-cache");
   xhr.send();
 }
 function reload_preview() {
@@ -599,6 +603,8 @@ def main():
   data_dirs = []
   for label, path, url, conf in DATA_DIRS:
     path = os.path.join(base_dir, path)
+    if conf:
+      conf = os.path.join(base_dir, conf)
     data_dirs.append((label, path, url, conf))
   if CHECK_REFERRER and referrer_url:
     script_parts = urllib.parse.urlparse(script_url)
@@ -831,8 +837,8 @@ def ProcessEdit(params, data_dirs):
     SendError(400, "Bad Parameter", "not a text file")
     return
   try:
-    with open(path, "w") as out_file:
-      out_file.write(p_text)
+    with open(path, "w") as output_file:
+      output_file.write(p_text)
   except Exception as e:
     SendError(500, "Internal Server Error", "writing failed: " + str(e))
     return
@@ -982,26 +988,67 @@ def ProcessUpload(params, data_dirs):
       PrintError("upload failed: duplicated filename")
       return
   try:
-    with open(path, "wb") as out_file:
-      if p_naming == "empty":
+    with open(path, "wb") as output_file:
+      if p_naming == "empty" and dir_conf:
         if filename.endswith(".art"):
-          out_file.write("@title \n".encode())
-          fm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})" +
-                         r"[ T]?(\d{2})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
-          hm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
-          if fm:
-            date = (fm.group(1) + "/" + fm.group(2) + "/" + fm.group(3) +
-                    " " + fm.group(4) + ":" + fm.group(5) + ":" + fm.group(6))
-            out_file.write(("@date " + date + "\n").encode())
-          elif hm:
-            date = hm.group(1) + "/" + hm.group(2) + "/" + hm.group(3)
-            out_file.write(("@date " + date + "\n").encode())
+          WriteArticleTemplate(output_file, dir_conf, filename)
       else:
-        out_file.write(p_file)
+        output_file.write(p_file)
   except Exception as e:
     PrintError("upload failed: " + str(e))
     return
   PrintInfo('The file "{}" has been uploaded successfully.'.format(filename))
+
+
+def WriteArticleTemplate(output_file, dir_conf, filename):
+  def P(*args, end="\n"):
+    output_file.write(args[0].format(*args[1:]).encode())
+    if end:
+      output_file.write(end.encode())
+  P("@title ")
+  fm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})" +
+                 r"[ T]?(\d{2})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
+  hm = re.search(r"^(\d{4})[-:/]?(\d{2})[-:/]?(\d{2})", filename)
+  if fm:
+    date = (fm.group(1) + "/" + fm.group(2) + "/" + fm.group(3) +
+            " " + fm.group(4) + ":" + fm.group(5) + ":" + fm.group(6))
+    P("@date {}", date)
+  elif hm:
+    date = hm.group(1) + "/" + hm.group(2) + "/" + hm.group(3)
+    P("@date {}", date)
+
+  output_dir = ""
+  with open(dir_conf) as input_file:
+    for line in input_file:
+      line = line.strip()
+      match = re.search(r"^output_dir: *(.*)$", line)
+      if match:
+        output_dir = match.group(1)
+        output_dir = os.path.join(dir_conf, output_dir)
+  toc_path = os.path.join(output_dir, "__toc__.tsv")
+  articles = []
+  if toc_path:
+    with open(toc_path) as input_file:
+      for line in input_file:
+        fields = line.strip().split("\t")
+        if len(fields) > 3:
+          articles.append(fields)
+  articles = sorted(articles, key=lambda x: (x[2], x[0]))
+  tag_scores = collections.defaultdict(float)
+  base_score = 1.0
+  for article in articles:
+    if len(article) > 3:
+      local_score = base_score
+      for tag in article[3].split(","):
+        tag = tag.strip()
+        if tag:
+          tag_scores[tag] += local_score
+          local_score *= 0.98
+      base_score *= 1.05
+  tag_scores = sorted(tag_scores.items(), key=lambda x: (-x[1], x[0]))
+  top_tags = [x[0] for x in tag_scores[:5]]
+  if top_tags:
+    P('@tags {}', ", ".join(top_tags))
 
 
 def ProcessRemoval(params, data_dirs):
