@@ -14,13 +14,14 @@ body {
     margin: 0;
     padding: 0;
     text-align: left;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 /* site title */
 div.site_title_area {
     margin: 1ex 0 1.5ex 0;
     clear: both;
+    line-height: 1.4;
 }
 div.site_title_area_weak {
     font-size: 80%;
@@ -59,6 +60,7 @@ article.main div.page_title_area {
     margin: 1ex 0 1.2ex 0;
     padding: 0;
     clear: both;
+    line-height: 1.4;
     border-bottom: 1px dashed #aaa;
 }
 article.main h2.article_title {
