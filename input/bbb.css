@@ -158,6 +158,23 @@ article.main td.num {
 article.main td.head {
     background: #eee;
 }
+article.main table:has(td.spread) {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+}
+article.main tr.cols2 td.spread {
+    width: 50%;
+}
+article.main tr.cols3 td.spread {
+    width: 33.333%;
+}
+article.main tr.cols4 td.spread {
+    width: 25%;
+}
+article.main tr.cols5 td.spread {
+    width: 20%;
+}
 article.main p.lv1 {
     margin-left: 4ex;
     padding: 0 0.3ex;

@@ -876,14 +876,19 @@ def PrintArticle(config, articles, index, article, sections, output_file):
         last_tag = tag_stack.pop()
         P('</' + last_tag + '>')
     if elem_type == "table":
-      P('<table>')
+      P('<table class="rows{}">', len(lines))
       for line in lines:
-        P('<tr>')
         line = re.sub(r"^\|", "", line)
         line = re.sub(r"\[\[([^\]]+)\|([^\]]+)\]\]", r"[[\1{{_VERT_}}\2]]", line)
         fields = line.split("|")
+        P('<tr class="cols{}">', len(fields))
         for field in fields:
           field = re.sub(r"{{_VERT_}}", "|", field)
+          spread = False
+          match = re.search(r"^<=>(.*)", field)
+          if match:
+            field = match.group(1)
+            spread = True
           colspan = 1
           match = re.search(r"^<(\d+)>(.*)", field)
           if match:
@@ -903,6 +908,8 @@ def PrintArticle(config, articles, index, article, sections, output_file):
           if match:
             field = match.group(1)
             class_name += " head"
+          if spread:
+            class_name += " spread"
           P('<td colspan="{}" rowspan="{}" class="{}">', colspan, rowspan, class_name, end="")
           PrintText(P, index, field.strip(), 1)
           P('</td>', end="")
@@ -998,6 +1005,16 @@ def PrintText(P, index, text, depth):
       if idx > 0:
         P('{}', text[:idx], end="")
         text = text[idx:]
+      match = re.search(r"^\[\\n\]", text)
+      if match:
+        P('<br/>')
+        text = text[match.end():]
+        continue
+      match = re.search(r"^\[\\t\]", text)
+      if match:
+        P('&#x2003;&#x2003;')
+        text = text[match.end():]
+        continue
       match = re.search("^\[\|\|(.*?)\|\|\]", text)
       if match:
         P('{}', match.group(1), end="")
