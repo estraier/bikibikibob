@@ -802,6 +802,9 @@ def PrintArticle(config, articles, index, article, sections, output_file):
   if desc:
     meta_html = '<meta property="og:description" content="{}"/>'.format(esc(desc))
     extra_head_lines.append(meta_html)
+  locale = config["language"] + "_ZZ"
+  meta_html = '<meta property="og:locale" content="{}"/>'.format(esc(locale))
+  extra_head_lines.append(meta_html)
   image = article.get("image")
   if image:
     meta_html = '<meta property="og:image" content="{}"/>'.format(esc(image))
