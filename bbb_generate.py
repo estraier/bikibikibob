@@ -489,13 +489,18 @@ def HoardDataAndRewriteArticle(config, article):
           if saved_filename:
             new_url = re.sub(r"/[^/]+$", "/", local_url) + urllib.parse.quote(saved_filename)
             if CheckDataByUrl(new_url):
+              if url == article.get("image"):
+                article["image"] = new_url
               url = new_url
               column_modified = True
         if column_modified:
           column = "" + url
           for name, value in attrs.items():
             if not name: continue
-            column += " [{}={}]".format(name, value)
+            if value == True:
+              column += " [{}]".format(name)
+            else:
+              column += " [{}={}]".format(name, value)
           line_modified = True
         mod_columns.append(column)
       if line_modified:
