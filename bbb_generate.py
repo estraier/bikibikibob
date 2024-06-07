@@ -1132,6 +1132,12 @@ def PrintText(P, index, text, depth):
             dest = face
           dest_url = "https://ja.wikipedia.org/wiki/" + urllib.parse.quote(dest)
           link_class = "external"
+        elif dest.startswith("google:"):
+          dest = dest[7:].strip()
+          if not dest and face:
+            dest = face
+          dest_url = "https://google.com/search?q=" + urllib.parse.quote(dest)
+          link_class = "external"
         else:
           submatch = re.search(r"(^[^#]*)#(.+)$", dest)
           if submatch:
