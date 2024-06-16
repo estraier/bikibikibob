@@ -1330,7 +1330,8 @@ def PrintYoutube(P, params):
       if match:
         video_id = match.group(1)
       else:
-        video_id = re.sub(r"[^_a-zA-Z0-9]", "", url)[:16]
+        video_id = re.sub(r"^https?://[a-z0-9\.]+/", "", url)
+        video_id = re.sub(r"[^_a-zA-Z0-9]", "", video_id)[:16]
       url = "https://www.youtube-nocookie.com/embed/" + video_id
       P('<iframe src="{}" loading="lazy" frameborder="0" class="youtube{}"></iframe>',
         url, len(columns), end="")
@@ -1356,7 +1357,8 @@ def PrintYoutube(P, params):
     if match:
       video_id = match.group(1)
     else:
-      video_id = re.sub(r"[^_a-zA-Z0-9]", "", url)[:16]
+      video_id = re.sub(r"^https?://[a-z0-9\.]+/", "", url)
+      video_id = re.sub(r"[^_a-zA-Z0-9]", "", video_id)[:16]
     url = "https://www.youtube-nocookie.com/embed/" + video_id
     P('<iframe src="{}" loading="lazy" frameborder="0" class="youtube{}" style="{}"></iframe>',
       url, len(columns), ";".join(styles), end="")
