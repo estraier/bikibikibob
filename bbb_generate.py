@@ -1326,7 +1326,7 @@ def PrintYoutube(P, params):
       if caption:
         P('<span class="youtube_caption youtube_caption2">{}</span>', caption, end="")
       video_id = ""
-      match = re.search(r"[?&]v=([_a-zA-Z0-9]+)([&#]|$)", url)
+      match = re.search(r"[?&]v=([-_a-zA-Z0-9]+)([&#]|$)", url)
       if match:
         video_id = match.group(1)
       else:
@@ -1353,7 +1353,7 @@ def PrintYoutube(P, params):
       P('<span class="youtube_caption youtube_caption{}">{}</span>',
         len(columns), caption, end="")
     video_id = ""
-    match = re.search(r"[?&]v=([_a-zA-Z0-9]+)([&#]|$)", url)
+    match = re.search(r"[?&]v=([-_a-zA-Z0-9]+)([&#]|$)", url)
     if match:
       video_id = match.group(1)
     else:
