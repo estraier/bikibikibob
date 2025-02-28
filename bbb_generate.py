@@ -771,7 +771,7 @@ def PrintArticle(config, articles, index, article, sections, output_file):
     page_title = site_title + ": " + title
     site_title_subclass = "site_title_area_weak"
   else:
-    page_title = title
+    page_title = site_title
     site_title_subclass = "site_title_area_strong"
   extra_site_title = ""
   if site_subtitle:
